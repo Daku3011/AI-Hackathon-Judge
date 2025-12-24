@@ -9,11 +9,9 @@ An AI-powered tool that analyzes your GitHub repository and demo video to provid
   <p><em>Compare your project against personas like 'The VC' or 'Roast Master'</em></p>
 </div>
 
-<div align="center" style="display: flex; justify-content: center; gap: 10px; margin-top: 20px;">
-  <img src="Scoreboard.png" alt="Scorecard" width="260"/>
-  <img src="AI_Verdict.png" alt="Feedback" width="260"/>
-  <img src="Wont_Work.png" alt="Why It Won't Win" width="260"/>
-</div>
+| Scorecard | AI Feedback | Reality Check |
+| :---: | :---: | :---: |
+| <img src="Scoreboard.png" width="300" /> | <img src="AI_Verdict.png" width="300" /> | <img src="Wont_Work.png" width="300" /> |
 
 ## ✨ Features
 
