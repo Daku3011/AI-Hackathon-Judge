@@ -11,8 +11,9 @@ function App() {
     setAppState('analyzing');
 
     try {
-      // Use localhost:8000 for backend
-      const response = await fetch('http://localhost:8000/analyze', {
+      // Use env var or default to localhost
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+      const response = await fetch(`${API_URL}/analyze`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

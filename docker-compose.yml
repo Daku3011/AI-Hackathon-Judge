@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+    volumes:
+      - ./backend:/app  # Optional: for hot reloading in dev
+    restart: always
+
+# Frontend can be deployed separately or added here if needed
+# But for production, static hosting (like Vercel) is recommended for frontend.

@@ -1,7 +1,7 @@
 import google.generativeai as genai
 import os
 
-def evaluate_project(repo_data: str, transcript: str, doc_text: str, persona: str = "standard"):
+async def evaluate_project(repo_data: str, transcript: str, doc_text: str, persona: str = "standard"):
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
         return {"error": "Missing GEMINI_API_KEY"}
@@ -17,16 +17,6 @@ def evaluate_project(repo_data: str, transcript: str, doc_text: str, persona: st
          return {"error": f"Model creation failed: {e}"}
 
     # print(f"DEBUG: calling gemini-pro with key: {api_key[:5]}...")
-    
-    # DEBUG: List available models to console to help user debug
-    # try:
-    #     print("DEBUG: Listing available models for this key...")
-    #     for m in genai.list_models():
-    #         if 'generateContent' in m.supported_generation_methods:
-    #             print(f" - {m.name}")
-    # except Exception as e:
-    #     print(f"DEBUG: Could not list models: {e}")
-
     
     
     # Define Persona Prompts
@@ -76,7 +66,7 @@ def evaluate_project(repo_data: str, transcript: str, doc_text: str, persona: st
     DOCUMENTATION:
     {doc_text[:5000]}
     
-    Provide a strictly valid JSON output (no markdown, no code blocks, no trailing text):
+    Provide a strictly valid JSON output with the following schema:
     {{
         "innovation_score": 5,
         "code_quality_score": 5,
@@ -85,13 +75,37 @@ def evaluate_project(repo_data: str, transcript: str, doc_text: str, persona: st
         "summary_feedback": "string",
         "why_it_wont_win": "string"
     }}
-    Ensure all keys are double-quoted. Do not use single quotes for keys or string values.
+    Ensure all keys are double-quoted.
     """
     
     try:
-        response = model.generate_content(prompt)
+        response = await model.generate_content_async(
+            prompt,
+            generation_config={"response_mime_type": "application/json"}
+        )
         print(f"DEBUG: Gemini response received: {response.text[:100]}...")
         return response.text
     except Exception as e:
         print(f"ERROR calling Gemini: {str(e)}")
         return {"error": str(e)}
+
+async def generate_roast(input_text: str):
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        return "I can't even roast you properly because the API key is missing. Pathetic."
+    
+    genai.configure(api_key=api_key)
+    try:
+        model = genai.GenerativeModel('models/gemini-2.5-flash')
+        prompt = f"""
+        The user was supposed to provide a valid GitHub URL or project details.
+        Instead, they provided this garbage: "{input_text}"
+        
+        You are a sarcastic, mean, and funny AI judge. 
+        Roast the user for being incompetent / trying to trick the system / inputting random nonsense.
+        Be brief (max 2 sentences) but brutal. Make it sound like you are disappointed in their existence.
+        """
+        response = await model.generate_content_async(prompt)
+        return response.text
+    except Exception as e:
+        return f"I tried to roast you but even that failed: {e}"

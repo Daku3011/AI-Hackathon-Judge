@@ -5,8 +5,13 @@ from typing import Optional
 from services.github_analyzer import analyze_repo
 from services.video_analyzer import get_video_transcript
 from services.doc_analyzer import extract_text_from_pdf
-from services.judge_engine import evaluate_project
+from services.judge_engine import evaluate_project, generate_roast
 import json
+import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 app = FastAPI(title="AI Project Judge")
 
@@ -31,6 +36,17 @@ def read_root():
 async def analyze_project(submission: ProjectSubmission):
     # 1. Analyze Repo
     repo_data = analyze_repo(submission.github_url)
+    
+    # Check for invalid repo
+    if repo_data.get("files_count", 0) == 0 or "Invalid" in repo_data.get("summary", ""):
+        # Generate Roast
+        roast_msg = await generate_roast(submission.github_url)
+        return {
+             "scores": { "innovation": 0, "quality": 0, "uiux": 0, "impact": 0 },
+             "feedback": roast_msg,
+             "whyWontWin": "Because you didn't even submit a real project."
+        }
+        
     repo_summary = json.dumps(repo_data) # Convert to string for LLM
 
     # 2. Analyze Video
@@ -62,7 +78,7 @@ async def analyze_project(submission: ProjectSubmission):
             "whyWontWin": "The UI is basic. Adding animations would help."
          }
 
-    analysis_result = evaluate_project(repo_summary, transcript, doc_text, submission.persona)
+    analysis_result = await evaluate_project(repo_summary, transcript, doc_text, submission.persona)
     
     # Check if analysis_result is already a dict (error from judge_engine)
     if isinstance(analysis_result, dict):
@@ -73,23 +89,8 @@ async def analyze_project(submission: ProjectSubmission):
         }
 
     # Parse the LLM output (assuming it returns JSON string)
-    import re
     try:
-        # Robust JSON extraction: Find content between first { and last }
-        match = re.search(r'\{.*\}', analysis_result, re.DOTALL)
-        if match:
-             json_str = match.group(0)
-             try:
-                data = json.loads(json_str)
-             except json.JSONDecodeError:
-                # Fallback: Try analyzing as Python dict (handles single quotes)
-                import ast
-                try:
-                    data = ast.literal_eval(json_str)
-                except:
-                    raise ValueError("Could not parse JSON or Python Dict")
-        else:
-             raise ValueError("No JSON object found in response")
+        data = json.loads(analysis_result)
 
         # Map LLM flat structure to Frontend nested structure
         return {
