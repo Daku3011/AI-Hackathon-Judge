@@ -13,7 +13,19 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
-app = FastAPI(title="AI Project Judge")
+# Read version from VERSION file
+VERSION = "1.0.0"
+try:
+    with open(os.path.join(os.path.dirname(__file__), "VERSION"), "r") as f:
+        VERSION = f.read().strip()
+except:
+    pass
+
+app = FastAPI(
+    title="AI Project Judge",
+    version=VERSION,
+    description="An AI-powered tool that analyzes your GitHub repository and demo video to provide instant scores, feedback, and a reality check."
+)
 
 app.add_middleware(
     CORSMiddleware,
@@ -30,7 +42,10 @@ class ProjectSubmission(BaseModel):
 
 @app.get("/")
 def read_root():
-    return {"message": "AI Project Judge API is running"}
+    return {
+        "message": "AI Project Judge API is running",
+        "version": VERSION
+    }
 
 @app.post("/analyze")
 async def analyze_project(submission: ProjectSubmission):
