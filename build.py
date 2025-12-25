@@ -25,6 +25,23 @@ def main():
     
     # Run PyInstaller
     print("Running PyInstaller...")
+    
+    # Clean previous build to prevent "Directory not empty" errors
+    if os.path.exists(dist_dir):
+        print(f"Cleaning existing dist directory: {dist_dir}")
+        try:
+            shutil.rmtree(dist_dir)
+        except Exception as e:
+            print(f"WARNING: Failed to clean dist directory: {e}")
+            # Try to continue anyway, or exit? Best to continue and let PyInstaller try too.
+            
+    build_work_dir = os.path.join(project_root, "build")
+    if os.path.exists(build_work_dir):
+         try:
+            shutil.rmtree(build_work_dir)
+         except:
+            pass
+
     # We use a spec file for configuration
     run_command(f"pyinstaller project_judge.spec --clean --noconfirm")
     
