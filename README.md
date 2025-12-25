@@ -5,13 +5,13 @@
 An AI-powered tool that analyzes your GitHub repository and demo video to provide instant scores, feedback, and a "Why You Won't Win" reality check.
 
 <div align="center">
-  <img src="Index.png" alt="Home Screen" width="800"/>
+  <img src="screenshots/Index.png" alt="Home Screen" width="800"/>
   <p><em>Compare your project against personas like 'The VC' or 'Roast Master'</em></p>
 </div>
 
 | Scorecard | AI Feedback | Reality Check |
 | :---: | :---: | :---: |
-| <img src="Scoreboard.png" width="300" /> | <img src="AI_Verdict.png" width="300" /> | <img src="Wont_Work.png" width="300" /> |
+| <img src="screenshots/Scoreboard.png" width="300" /> | <img src="screenshots/AI_Verdict.png" width="300" /> | <img src="screenshots/Wont_Work.png" width="300" /> |
 
 ## ✨ Features
 
@@ -29,17 +29,34 @@ An AI-powered tool that analyzes your GitHub repository and demo video to provid
 *   **Frontend**: React, Vite, Tailwind CSS (v4)
 *   **Backend**: Python, FastAPI
 *   **AI**: Google Gemini (via `google-generativeai`)
+*   **Build**: PyInstaller (for standalone executable)
 
 ## 🚀 Getting Started
 
-### Prerequisites
+You can run the application either as a standalone executable or by setting up the development environment.
 
+### Option 1: Standalone Executable (Recommended)
+
+**Linux**
+1.  Download `project_judge_linux.zip` from Releases.
+2.  Extract it and run:
+    ```bash
+    ./project_judge
+    ```
+    *(Make sure your `.env` file with `GEMINI_API_KEY` is in the same folder)*
+
+**Windows**
+1.  Run `build_windows.bat` to generate the `.exe` (requires Python & Node.js).
+2.  Run `project_judge.exe`.
+
+### Option 2: Development Setup
+
+**Prerequisites**
 *   Node.js (v18+)
 *   Python (v3.10+)
 *   A Google Gemini API Key
 
-### 1. Backend Setup
-
+**1. Backend Setup**
 ```bash
 cd backend
 python -m venv venv
@@ -53,8 +70,7 @@ export GEMINI_API_KEY="your_api_key_here"
 uvicorn main:app --reload --port 8000
 ```
 
-### 2. Frontend Setup
-
+**2. Frontend Setup**
 ```bash
 cd frontend
 npm install

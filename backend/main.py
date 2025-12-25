@@ -1,4 +1,7 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional
@@ -35,12 +38,22 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Mount the 'assets' directory from the frontend build
+# We use an absolute path relative to this file to be safe
+frontend_dist = os.path.join(os.path.dirname(os.path.dirname(__file__)), "frontend", "dist")
+assets_path = os.path.join(frontend_dist, "assets")
+
+if os.path.isdir(assets_path):
+    app.mount("/assets", StaticFiles(directory=assets_path), name="assets")
+else:
+    print(f"WARNING: Frontend assets not found at {assets_path}. Run 'npm run build' in frontend directory.")
+
 class ProjectSubmission(BaseModel):
     github_url: str
     video_url: Optional[str] = None
     persona: Optional[str] = "standard"
 
-@app.get("/")
+@app.get("/api")
 def read_root():
     return {
         "message": "AI Project Judge API is running",
@@ -126,3 +139,11 @@ async def analyze_project(submission: ProjectSubmission):
              "feedback": f"Failed to parse AI response. Raw output logged.",
              "whyWontWin": "N/A"
         }
+
+@app.get("/{catchall:path}")
+async def serve_frontend(catchall: str):
+    # Serve index.html for any other route (SPA)
+    index_path = os.path.join(frontend_dist, "index.html")
+    if os.path.exists(index_path):
+        return FileResponse(index_path)
+    return {"error": "Frontend not found"}
