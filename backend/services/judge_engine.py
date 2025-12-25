@@ -6,7 +6,6 @@ async def evaluate_project(repo_data: str, transcript: str, doc_text: str, perso
     if not api_key:
         return {"error": "Missing GEMINI_API_KEY"}
     
-    # genai.configure(api_key=api_key)
     genai.configure(api_key=api_key)
     
     # Fallback to standard gemini-pro which is most widely supported
@@ -21,7 +20,17 @@ async def evaluate_project(repo_data: str, transcript: str, doc_text: str, perso
     
     # Define Persona Prompts
     persona_prompts = {
-        "standard": "You are a Fair & Experienced Hackathon Judge. You value innovation, execution, and presentation equally. You provide constructive feedback that balances praise with actionable advice.",
+        "standard": """You are a Fair & Experienced Hackathon Judge. Your goal is to evaluate projects objectively and constructively.
+        You evaluate based on the following comprehensive criteria:
+        
+        1. **Innovation & Originality**: Is the solution unique? Does it approach the problem in a novel way?
+        2. **Technical Implementation**: Code quality, complexity, functionality, and use of technology.
+        3. **Problem Statement & Relevance**: Does it address a real, clearly defined problem?
+        4. **User Experience (UX/UI)**: Intuitiveness, design, and flow.
+        5. **Potential Impact/Feasibility**: Scalability, real-world applicability, and market potential.
+        6. **Presentation & Teamwork**: Clarity of the demo, explanation of choices, and evidence of collaboration.
+        
+        You must provide valuable, constructive feedback, highlighting both strengths and weaknesses. You also need to suggest technical questions to ask the team during Q&A.""",
         
         "vc": """You are a Silicon Valley VC (Venture Capitalist). You DO NOT CARE about code styles, unit tests, or clean architecture. 
         You ONLY care about:
@@ -69,9 +78,14 @@ async def evaluate_project(repo_data: str, transcript: str, doc_text: str, perso
     Provide a strictly valid JSON output with the following schema:
     {{
         "innovation_score": 5,
-        "code_quality_score": 5,
+        "technical_score": 5,
+        "relevance_score": 5,
         "ui_ux_score": 5,
         "impact_score": 5,
+        "presentation_score": 5,
+        "key_strengths": ["string", "string"],
+        "areas_for_improvement": ["string", "string"],
+        "suggested_questions": ["string", "string"],
         "summary_feedback": "string",
         "why_it_wont_win": "string"
     }}

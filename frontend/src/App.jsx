@@ -29,9 +29,12 @@ function App() {
 
       // Handle potential mock fallback or real structure
       setResults({
-        scores: result.scores || { innovation: 0, quality: 0, uiux: 0, impact: 0 },
+        scores: result.scores || { innovation: 0, technical: 0, relevance: 0, uiux: 0, impact: 0, presentation: 0 },
         feedback: result.feedback || "No feedback generated.",
-        whyWontWin: result.whyWontWin || "N/A"
+        whyWontWin: result.whyWontWin || "N/A",
+        strengths: result.strengths || [],
+        improvements: result.improvements || [],
+        questions: result.questions || []
       });
       setAppState('results');
 
@@ -85,6 +88,9 @@ function App() {
               <FeedbackSection
                 feedback={results.feedback}
                 whyWontWin={results.whyWontWin}
+                strengths={results.strengths}
+                improvements={results.improvements}
+                questions={results.questions}
               />
             </div>
           </div>

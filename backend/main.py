@@ -39,8 +39,22 @@ app.add_middleware(
 )
 
 # Mount the 'assets' directory from the frontend build
-# We use an absolute path relative to this file to be safe
-frontend_dist = os.path.join(os.path.dirname(os.path.dirname(__file__)), "frontend", "dist")
+import sys
+
+if getattr(sys, 'frozen', False):
+    # Running in a PyInstaller bundle
+    base_path = os.path.dirname(sys.executable)
+    # PyInstaller v6+ puts contents in _internal by default
+    internal_path = os.path.join(base_path, "_internal")
+    if os.path.exists(internal_path):
+        base_path = internal_path
+    
+    frontend_dist = os.path.join(base_path, "frontend", "dist")
+else:
+    # Running in a normal Python environment
+    base_path = os.path.dirname(os.path.dirname(__file__))
+    frontend_dist = os.path.join(base_path, "frontend", "dist")
+
 assets_path = os.path.join(frontend_dist, "assets")
 
 if os.path.isdir(assets_path):
@@ -98,10 +112,26 @@ async def analyze_project(submission: ProjectSubmission):
          return {
             "scores": {
                 "innovation": 8,
-                "quality": 7,
+                "technical": 7,
+                "relevance": 9,
                 "uiux": 9,
-                "impact": 8
+                "impact": 8,
+                "presentation": 7
             },
+            "strengths": [
+                "Clean project structure",
+                "Good use of modern frameworks",
+                "Clear documentation"
+            ],
+            "improvements": [
+                "Add more unit tests",
+                "Improve error handling",
+                "Add a demo video"
+            ],
+            "questions": [
+                "How do you handle scalability?",
+                "What was the biggest technical challenge?"
+            ],
             "feedback": "Gemini API Key missing. Returning demo feedback.\n\nThe project structure looks good. Consider adding more unit tests.",
             "whyWontWin": "The UI is basic. Adding animations would help."
          }
@@ -111,7 +141,7 @@ async def analyze_project(submission: ProjectSubmission):
     # Check if analysis_result is already a dict (error from judge_engine)
     if isinstance(analysis_result, dict):
         return {
-            "scores": { "innovation": 0, "quality": 0, "uiux": 0, "impact": 0 },
+            "scores": { "innovation": 0, "technical": 0, "relevance": 0, "uiux": 0, "impact": 0, "presentation": 0 },
             "feedback": f"Error during analysis: {analysis_result.get('error')}",
             "whyWontWin": "N/A"
         }
@@ -124,10 +154,15 @@ async def analyze_project(submission: ProjectSubmission):
         return {
             "scores": {
                 "innovation": data.get("innovation_score", 0),
-                "quality": data.get("code_quality_score", 0),
+                "technical": data.get("technical_score", data.get("code_quality_score", 0)),
+                "relevance": data.get("relevance_score", 0),
                 "uiux": data.get("ui_ux_score", 0),
-                "impact": data.get("impact_score", 0)
+                "impact": data.get("impact_score", 0),
+                "presentation": data.get("presentation_score", 0)
             },
+            "strengths": data.get("key_strengths", []),
+            "improvements": data.get("areas_for_improvement", []),
+            "questions": data.get("suggested_questions", []),
             "feedback": data.get("summary_feedback", "No feedback provided."),
             "whyWontWin": data.get("why_it_wont_win", "N/A")
         }
@@ -135,7 +170,7 @@ async def analyze_project(submission: ProjectSubmission):
         print(f"JSON Parse Error: {e}")
         print(f"Raw Output: {analysis_result}")
         return {
-             "scores": { "innovation": 0, "quality": 0, "uiux": 0, "impact": 0 },
+             "scores": { "innovation": 0, "technical": 0, "relevance": 0, "uiux": 0, "impact": 0, "presentation": 0 },
              "feedback": f"Failed to parse AI response. Raw output logged.",
              "whyWontWin": "N/A"
         }
@@ -147,3 +182,20 @@ async def serve_frontend(catchall: str):
     if os.path.exists(index_path):
         return FileResponse(index_path)
     return {"error": "Frontend not found"}
+
+if __name__ == "__main__":
+    import uvicorn
+    import multiprocessing
+    
+    # Required for PyInstaller on Windows
+    multiprocessing.freeze_support()
+    
+    print(f"Starting Project Judge v{VERSION}...")
+    print(f"Serving frontend from: {frontend_dist}")
+    
+    # Determine port
+    port = int(os.environ.get("PORT", 8000))
+    
+    # Run server
+    # Pass app instance directly for frozen builds
+    uvicorn.run(app, host="0.0.0.0", port=port, reload=False, workers=1)

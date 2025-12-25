@@ -1,0 +1,43 @@
+# How to Build Project Judge
+
+This project can be built as a standalone executable for both Linux and Windows.
+
+## Prerequisites
+
+1.  **Python 3.10+** installed.
+2.  **Node.js 18+** installed.
+3.  Install strict dependencies:
+    ```bash
+    pip install -r backend/requirements.txt
+    pip install pyinstaller
+    ```
+
+## Building on Linux
+
+1.  Open a terminal in the project root.
+2.  Run the build script:
+    ```bash
+    python3 build.py
+    ```
+3.  The executable will be created at `dist/project_judge/project_judge`.
+4.  Run it:
+    ```bash
+    ./dist/project_judge/project_judge
+    ```
+
+## Building on Windows
+
+1.  Open Command Prompt or PowerShell in the project root.
+2.  Run the Windows build batch file:
+    ```cmd
+    build_windows.bat
+    ```
+3.  The executable will be created at `dist\project_judge\project_judge.exe`.
+4.  Run it by double-clicking the .exe or running it from the command line.
+
+## Notes
+
+-   **Frontend Assets**: The build process automatically builds the React frontend and bundles it into the executable.
+-   **API Key**: The executable still needs the `GEMINI_API_KEY`. 
+    -   Create a `.env` file next to the executable (in `dist/project_judge/`) with your key: `GEMINI_API_KEY=your_key_here`.
+    -   Or set it as a system environment variable.
