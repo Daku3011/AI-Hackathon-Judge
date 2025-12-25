@@ -18,7 +18,7 @@ VERSION = "1.0.0"
 try:
     with open(os.path.join(os.path.dirname(__file__), "VERSION"), "r") as f:
         VERSION = f.read().strip()
-except:
+except (FileNotFoundError, IOError):
     pass
 
 app = FastAPI(
