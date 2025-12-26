@@ -17,7 +17,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Read version from VERSION file
-VERSION = "1.0.0"
+VERSION = "1.1.3"
 try:
     with open(os.path.join(os.path.dirname(__file__), "VERSION"), "r") as f:
         VERSION = f.read().strip()
