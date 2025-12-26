@@ -1,80 +1,116 @@
-# Code of Conduct
+# Contributing to AI-Hackathon-Judge
 
-## Our Pledge
+Thank you for your interest in contributing to **AI-Hackathon-Judge** 🎉  
+We welcome contributions that improve functionality, security, documentation, and overall project quality.
 
-We as contributors and maintainers of **AI-Hackathon-Judge** pledge to make participation in this project a harassment-free and respectful experience for everyone, regardless of age, body size, disability, ethnicity, gender identity and expression, level of experience, nationality, personal appearance, race, religion, or sexual identity and orientation.
-
----
-
-## Our Standards
-
-Examples of behavior that contributes to a positive environment include:
-
-* Using welcoming and inclusive language
-* Being respectful of differing viewpoints and experiences
-* Accepting constructive criticism gracefully
-* Focusing on what is best for the community
-* Showing empathy toward other community members
-
-Examples of unacceptable behavior include:
-
-* Harassment, discrimination, or hateful conduct
-* Trolling, insulting, or derogatory comments
-* Personal or political attacks
-* Publishing others’ private information without consent
-* Any conduct that would reasonably be considered inappropriate in a professional setting
+This document explains how you can contribute effectively and responsibly.
 
 ---
 
-## Responsibilities
+## 📌 Ways to Contribute
 
-Project maintainers are responsible for clarifying standards of acceptable behavior and are expected to take appropriate and fair corrective action in response to any instances of unacceptable behavior.
+You can help the project in many ways, including:
 
-Maintainers have the right and responsibility to remove, edit, or reject contributions, comments, commits, or other actions that do not align with this Code of Conduct.
-
----
-
-## Scope
-
-This Code of Conduct applies to all project spaces, including:
-
-* GitHub repositories
-* Issue trackers
-* Pull requests
-* Project discussions
-* Any official communication related to this project
+- 🐞 Reporting bugs
+- ✨ Suggesting or implementing new features
+- 🧠 Improving AI evaluation or scoring logic
+- 📄 Enhancing documentation
+- 🛡️ Strengthening security practices
+- 🧪 Adding or improving tests
 
 ---
 
-## Enforcement
+## 🧾 Before You Start
 
-Instances of abusive, harassing, or otherwise unacceptable behavior may be reported by contacting the project maintainer at:
-
-**rdwarkesh1300 [at] gmail [dot] com**
-
-All complaints will be reviewed and investigated promptly and fairly. The maintainers are committed to maintaining confidentiality where possible.
+- Please search existing **Issues** and **Pull Requests** to avoid duplicates.
+- For security-related issues, **do NOT open a public issue**.  
+  Follow the instructions in [`SECURITY.md`](SECURITY.md).
 
 ---
 
-## Enforcement Guidelines
+## 🛠️ Development Setup
 
-Maintainers will follow these community impact guidelines when determining consequences:
-
-1. **Correction** – A private warning and clarification of expectations
-2. **Warning** – A formal warning after repeated violations
-3. **Temporary Ban** – Temporary restriction from participation
-4. **Permanent Ban** – Permanent removal from the community
+1. **Fork** the repository.
+2. **Clone** your fork locally:
+   ```bash
+   git clone https://github.com/<your-username>/AI-Hackathon-Judge.git
+   cd AI-Hackathon-Judge
+   ```
+3. Create a new branch for your work:
+   ```bash
+   git checkout -b feature/your-feature-name
+   ```
+4. Install dependencies as described in `README.md`.
+5. Configure environment variables and API keys securely.
 
 ---
 
-## Attribution
+## 🧪 Testing & Code Quality
 
-This Code of Conduct is adapted from the **Contributor Covenant**, version 2.1.
+- Ensure your changes do not break existing functionality.
+- Add tests where applicable.
+- Run linters or formatters if configured.
+- Do not commit debug logs, secrets, or temporary files.
 
 ---
 
-## Updates
+## 📝 Commit Message Guidelines
 
-This Code of Conduct may be updated as the project evolves to reflect community needs.
+Use clear and descriptive commit messages.
 
-*Last updated: December 2025*
+**Format:**
+```
+type: short description
+```
+
+**Examples:**
+- `feat: add AI evaluation explanation module`
+- `fix: handle empty repository input`
+- `docs: update setup instructions`
+- `security: improve prompt injection safeguards`
+
+---
+
+## 🔁 Pull Request Process
+
+1. Push your branch to your fork:
+   ```bash
+   git push origin feature/your-feature-name
+   ```
+2. Open a **Pull Request** against the `main` branch.
+3. In the PR description, include:
+   - What problem the PR solves
+   - Summary of changes
+   - Screenshots or demo links (if applicable)
+4. Ensure your PR:
+   - Is focused and minimal
+   - Passes all checks
+   - Does not introduce security risks
+
+---
+
+## 🔐 Security & Responsible Disclosure
+
+- Never include API keys, tokens, or credentials in commits.
+- Avoid exposing sensitive system or environment details.
+- Follow the responsible disclosure process in [`SECURITY.md`](SECURITY.md).
+
+---
+
+## 🧠 AI & Ethics Guidelines
+
+Since this project involves AI and LLMs:
+
+- Avoid introducing biased, unsafe, or misleading AI behavior.
+- Be careful with prompt construction and user-controlled inputs.
+- Prefer transparency and explainability in AI outputs.
+
+---
+
+## 🏁 Final Notes
+
+- All contributions are reviewed for quality, clarity, and alignment with project goals.
+- Maintainers may request changes before merging.
+- All contributions are subject to the project license.
+
+Thank you for contributing to **AI-Hackathon-Judge** 🚀
