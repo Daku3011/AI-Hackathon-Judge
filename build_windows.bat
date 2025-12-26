@@ -1,12 +1,10 @@
 @echo off
 echo Checking Frontend Build...
-if not exist "frontend\dist" (
-    echo Frontend dist not found. Building frontend...
-    cd frontend
-    call npm install
-    call npm run build
-    cd ..
-)
+echo Building frontend...
+cd frontend
+call npm install
+call npm run build
+cd ..
 
 
 echo Cleaning previous build...

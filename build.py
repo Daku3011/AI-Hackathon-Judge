@@ -18,10 +18,9 @@ def main():
     dist_dir = os.path.join(project_root, "dist")
     
     # Check if frontend is built
-    frontend_dist = os.path.join(frontend_dir, "dist")
-    if not os.path.exists(frontend_dist):
-        print("Frontend/dist not found. Building frontend...")
-        run_command(f"cd {frontend_dir} && npm install && npm run build")
+    # Build frontend
+    print("Building frontend...")
+    run_command(f"cd {frontend_dir} && npm install && npm run build")
     
     # Run PyInstaller
     print("Running PyInstaller...")
