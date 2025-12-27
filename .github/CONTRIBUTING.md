@@ -40,7 +40,8 @@ You can help the project in many ways, including:
    ```bash
    git checkout -b feature/your-feature-name
    ```
-4. Install dependencies as described in `README.md`.
+4. Install dependencies as described in `../README.md`.
+    - *Tip: You can use `docker-compose up --build` to skip manual dependency installation.*
 5. Configure environment variables and API keys securely.
 
 ---

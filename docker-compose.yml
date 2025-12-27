@@ -9,7 +9,8 @@ services:
       - GEMINI_API_KEY=${GEMINI_API_KEY}
       - GITHUB_TOKEN=${GITHUB_TOKEN}
     volumes:
-      - ./backend:/app  # Optional: for hot reloading in dev
+      - ./backend:/app # Optional: for hot reloading in dev
+      - ./frontend:/frontend # Mount frontend for static serving
     restart: always
 
 # Frontend can be deployed separately or added here if needed

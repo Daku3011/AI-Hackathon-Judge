@@ -49,7 +49,22 @@ You can run the application either as a standalone executable or by setting up t
 1.  Run `build_windows.bat` to generate the `.exe` (requires Python & Node.js).
 2.  Run `project_judge.exe`.
 
-### Option 2: Development Setup
+### Option 2: Docker (Easiest for Dev)
+
+1.  Ensure you have **Docker** and **Docker Compose** installed.
+2.  Set your API keys in a `.env` file in the project root:
+    ```bash
+    GEMINI_API_KEY=your_key_here
+    GITHUB_TOKEN=your_token_here
+    ```
+3.  Run the application:
+    ```bash
+    docker-compose up --build
+    ```
+4.  Open `http://localhost:8000` in your browser.
+    *(Note: On Linux, you might need `sudo` for docker commands)*
+
+### Option 3: Development Setup
 
 **Prerequisites**
 *   Node.js (v18+)
