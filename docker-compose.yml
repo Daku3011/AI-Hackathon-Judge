@@ -5,9 +5,8 @@ services:
     build: ./backend
     ports:
       - "8000:8000"
-    environment:
-      - GEMINI_API_KEY=${GEMINI_API_KEY}
-      - GITHUB_TOKEN=${GITHUB_TOKEN}
+    env_file:
+      - .env
     volumes:
       - ./backend:/app # Optional: for hot reloading in dev
       - ./frontend:/frontend # Mount frontend for static serving

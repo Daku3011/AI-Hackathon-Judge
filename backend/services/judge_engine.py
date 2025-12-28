@@ -1,14 +1,14 @@
 import google.generativeai as genai
 import os
 
-async def evaluate_project(repo_data: str, transcript: str, doc_text: str, persona: str = "standard"):
+async def evaluate_project(repo_data: str, transcript: str, doc_text: str, ppt_text: str = "", persona: str = "standard"):
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
         return {"error": "Missing GEMINI_API_KEY"}
     
     genai.configure(api_key=api_key)
     
-    # Fallback to standard gemini-pro which is most widely supported
+    # Fallback to standard gemini-2.5-flash which is most widely supported
     try:
         model = genai.GenerativeModel('models/gemini-2.5-flash')
     except Exception as e:
@@ -16,6 +16,7 @@ async def evaluate_project(repo_data: str, transcript: str, doc_text: str, perso
          return {"error": f"Model creation failed: {e}"}
 
     # print(f"DEBUG: calling gemini-pro with key: {api_key[:5]}...")
+    print(f"DEBUG: PPT Text Length: {len(ppt_text)}")
     
     
     # Define Persona Prompts
@@ -75,6 +76,18 @@ async def evaluate_project(repo_data: str, transcript: str, doc_text: str, perso
     DOCUMENTATION:
     {doc_text[:5000]}
     
+    PPT SLIDES CONTENT:
+    {ppt_text[:5000]}
+    
+    SPECIAL INSTRUCTIONS FOR PPT:
+    1. **Project Relevance**: Verify if the PPT content matches the project described in the code and video. If it seems unrelated or generic, be rude/dismissive in the feedback.
+    2. **AI Detection (STRICT)**: You must aggressively detect AI-generated content. Look for:
+       - Generic buzzwords ("Revolutionizing", "Unlocking potential", "In today's fast-paced world").
+       - Perfect, robotic structure with lack of specific implementation details or constraints.
+       - Hallucinated features not found in the code.
+       - If it feels like a ChatGPT copy-paste, mark "is_ai_generated": true.
+       - If it has typos, specific rigid technical diagrams explained poorly, or deeply specific human nuance, mark "is_ai_generated": false. 
+    
     Provide a strictly valid JSON output with the following schema:
     {{
         "innovation_score": 5,
@@ -87,7 +100,12 @@ async def evaluate_project(repo_data: str, transcript: str, doc_text: str, perso
         "areas_for_improvement": ["string", "string"],
         "suggested_questions": ["string", "string"],
         "summary_feedback": "string",
-        "why_it_wont_win": "string"
+        "why_it_wont_win": "string",
+        "ppt_analysis": {{
+            "is_relevant": true,
+            "is_ai_generated": true,
+            "comments": "string"
+        }}
     }}
     Ensure all keys are double-quoted.
     """

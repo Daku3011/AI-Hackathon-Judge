@@ -5,9 +5,18 @@ const InputForm = ({ onSubmit, isLoading }) => {
     const [videoUrl, setVideoUrl] = useState('');
     const [persona, setPersona] = useState('standard');
 
+    const [pptFile, setPptFile] = useState(null);
+
     const handleSubmit = (e) => {
         e.preventDefault();
-        onSubmit({ github_url: githubUrl, video_url: videoUrl, persona });
+        const formData = new FormData();
+        formData.append('github_url', githubUrl);
+        formData.append('video_url', videoUrl);
+        formData.append('persona', persona);
+        if (pptFile) {
+            formData.append('ppt_file', pptFile);
+        }
+        onSubmit(formData);
     };
 
     return (
@@ -30,7 +39,6 @@ const InputForm = ({ onSubmit, isLoading }) => {
                                 placeholder="https://github.com/username/repo"
                                 value={githubUrl}
                                 onChange={(e) => setGithubUrl(e.target.value)}
-                                required
                             />
                             <div className="absolute left-4 top-1/2 -translate-y-1/2 text-xl opacity-50">📦</div>
                         </div>
@@ -49,6 +57,21 @@ const InputForm = ({ onSubmit, isLoading }) => {
                                 onChange={(e) => setVideoUrl(e.target.value)}
                             />
                             <div className="absolute left-4 top-1/2 -translate-y-1/2 text-xl opacity-50">🎬</div>
+                        </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="block text-sm font-semibold text-slate-700 uppercase tracking-wide">
+                            Presentation <span className="text-slate-400 font-normal normal-case">(Optional)</span>
+                        </label>
+                        <div className="relative">
+                            <input
+                                type="file"
+                                accept=".ppt,.pptx,.pdf"
+                                className="w-full p-4 pl-12 rounded-xl bg-slate-50 border border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none text-slate-800 font-medium file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+                                onChange={(e) => setPptFile(e.target.files[0])}
+                            />
+                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-xl opacity-50">📊</div>
                         </div>
                     </div>
 

@@ -13,13 +13,18 @@ function App() {
     try {
       // Use env var or default to localhost
       const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-      const response = await fetch(`${API_URL}/analyze`, {
+      const options = {
         method: 'POST',
-        headers: {
+        body: data instanceof FormData ? data : JSON.stringify(data),
+      };
+
+      if (!(data instanceof FormData)) {
+        options.headers = {
           'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
+        };
+      }
+
+      const response = await fetch(`${API_URL}/analyze`, options);
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -34,7 +39,9 @@ function App() {
         whyWontWin: result.whyWontWin || "N/A",
         strengths: result.strengths || [],
         improvements: result.improvements || [],
-        questions: result.questions || []
+        questions: result.questions || [],
+        ppt_analysis: result.ppt_analysis || {},
+        video_analysis: result.video_analysis || {}
       });
       setAppState('results');
 
@@ -91,6 +98,8 @@ function App() {
                 strengths={results.strengths}
                 improvements={results.improvements}
                 questions={results.questions}
+                pptAnalysis={results.ppt_analysis}
+                videoAnalysis={results.video_analysis}
               />
             </div>
           </div>

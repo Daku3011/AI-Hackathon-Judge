@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -9,6 +9,7 @@ from services.github_analyzer import analyze_repo
 from services.video_analyzer import get_video_transcript
 from services.doc_analyzer import extract_text_from_pdf
 from services.judge_engine import evaluate_project, generate_roast
+from services.ppt_analyzer import extract_text_from_ppt
 import json
 import os
 from dotenv import load_dotenv
@@ -75,36 +76,83 @@ def read_root():
     }
 
 @app.post("/analyze")
-async def analyze_project(submission: ProjectSubmission):
-    # 1. Analyze Repo
-    repo_data = analyze_repo(submission.github_url)
-    
-    # Check for invalid repo
-    if repo_data.get("files_count", 0) == 0 or "Invalid" in repo_data.get("summary", ""):
-        # Generate Roast
-        roast_msg = await generate_roast(submission.github_url)
-        return {
+async def analyze_project(
+    github_url: Optional[str] = Form(None),
+    video_url: Optional[str] = Form(None),
+    persona: str = Form("standard"),
+    ppt_file: Optional[UploadFile] = File(None),
+    doc_file: Optional[UploadFile] = File(None)
+):
+    # Validate Inputs: Require at least GitHub URL or PPT
+    if not github_url and not ppt_file:
+         return {
              "scores": { "innovation": 0, "quality": 0, "uiux": 0, "impact": 0 },
-             "feedback": roast_msg,
-             "whyWontWin": "Because you didn't even submit a real project."
-        }
+             "feedback": "You must provide at least a GitHub Repository URL or upload a Presentation.",
+             "whyWontWin": "Because you submitted nothing."
+         }
+
+    # Validate File Type
+    if ppt_file:
+        filename = ppt_file.filename.lower()
+        if not (filename.endswith('.ppt') or filename.endswith('.pptx') or filename.endswith('.pdf')):
+             return {
+                 "scores": { "innovation": 0, "quality": 0, "uiux": 0, "impact": 0 },
+                 "feedback": "Invalid file type. Only .ppt, .pptx, or .pdf files are accepted.",
+                 "whyWontWin": "Because you can't follow simple file format instructions."
+             }
+
+    # 1. Analyze Repo
+    repo_summary = ""
+    if github_url:
+        repo_data = analyze_repo(github_url)
         
-    repo_summary = json.dumps(repo_data) # Convert to string for LLM
+        # Check for invalid repo
+        if repo_data.get("files_count", 0) == 0:
+            # Generate Roast
+            roast_msg = await generate_roast(github_url)
+            return {
+                 "scores": { "innovation": 0, "quality": 0, "uiux": 0, "impact": 0 },
+                 "feedback": roast_msg,
+                 "whyWontWin": "Because you didn't even submit a real project."
+            }
+            
+        repo_summary = json.dumps(repo_data)
+    else:
+        repo_summary = "No GitHub repository provided."
 
     # 2. Analyze Video
     transcript = ""
-    if submission.video_url:
+    if video_url:
         # Extract video ID from URL (basic logic)
         try:
-            video_id = submission.video_url.split("v=")[1].split("&")[0]
+            video_id = video_url.split("v=")[1].split("&")[0]
             transcript = get_video_transcript(video_id)
         except:
              transcript = "Could not extract video ID or transcript."
 
-    # 3. Analyze Docs (Placeholder for file upload logic if added)
+    # 3. Analyze Docs
     doc_text = "No documents provided."
+    if doc_file:
+       # Placeholder for other doc types
+       pass
 
-    # 4. Judge
+    # 4. Analyze PPT / PDF
+    ppt_text = ""
+    if ppt_file:
+        try:
+            content = await ppt_file.read()
+            filename = ppt_file.filename.lower()
+            
+            if filename.endswith(".pdf"):
+                ppt_text = extract_text_from_pdf(content)
+            else:
+                # Assume PPT/PPTX
+                ppt_text = extract_text_from_ppt(content)
+                
+        except Exception as e:
+            ppt_text = f"Error reading presentation file: {e}"
+
+    # 5. Judge
     # For now, return a mock if no API key, or try to call if key exists
     import os
     if not os.getenv("GEMINI_API_KEY"):
@@ -136,7 +184,7 @@ async def analyze_project(submission: ProjectSubmission):
             "whyWontWin": "The UI is basic. Adding animations would help."
          }
 
-    analysis_result = await evaluate_project(repo_summary, transcript, doc_text, submission.persona)
+    analysis_result = await evaluate_project(repo_summary, transcript, doc_text, ppt_text, persona)
     
     # Check if analysis_result is already a dict (error from judge_engine)
     if isinstance(analysis_result, dict):
@@ -164,7 +212,9 @@ async def analyze_project(submission: ProjectSubmission):
             "improvements": data.get("areas_for_improvement", []),
             "questions": data.get("suggested_questions", []),
             "feedback": data.get("summary_feedback", "No feedback provided."),
-            "whyWontWin": data.get("why_it_wont_win", "N/A")
+            "whyWontWin": data.get("why_it_wont_win", "N/A"),
+            "ppt_analysis": data.get("ppt_analysis", {}),
+            "video_analysis": data.get("video_analysis", {})
         }
     except Exception as e:
         print(f"JSON Parse Error: {e}")

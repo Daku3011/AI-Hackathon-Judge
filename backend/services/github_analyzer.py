@@ -19,6 +19,11 @@ def analyze_repo(repo_url: str):
         # Initialize GitHub API
         # If GITHUB_TOKEN is not in env, this runs anonymously (low rate limit: 60/hr)
         token = os.getenv("GITHUB_TOKEN")
+        print(f"DEBUG: Analyzing repo: {full_name}")
+        print(f"DEBUG: Token loaded: {bool(token)}")
+        if token:
+            print(f"DEBUG: Token prefix: {token[:4]}...")
+            
         g = Github(token) if token else Github()
         
         repo = g.get_repo(full_name)
@@ -33,6 +38,9 @@ def analyze_repo(repo_url: str):
 
         # 2. Get File Structure & Key Files
         files_list = []
+        if readme_content and "No README.md found" not in readme_content:
+            files_list.append("README.md")
+            
         dependency_files = {} # content of package.json, requirements.txt, etc.
         code_samples = {} # content of main.py, App.jsx, etc.
         
@@ -54,7 +62,8 @@ def analyze_repo(repo_url: str):
                         queue.extend(repo.get_contents(file_content.path))
                     except: pass
                 else:
-                    files_list.append(file_content.path)
+                    if file_content.path != "README.md": # Avoid duplicates
+                        files_list.append(file_content.path)
                     
                     # Fetch Content if interesting
                     if file_content.name in target_configs:
@@ -89,6 +98,9 @@ def analyze_repo(repo_url: str):
 
         summary += f"--- README.md ---\n{readme_content[:3000]}\n"
         
+        
+        print(f"DEBUG: Found {len(files_list)} files.")
+        
         return {
             "summary": summary,
             "files_count": len(files_list),
@@ -97,6 +109,20 @@ def analyze_repo(repo_url: str):
 
     except Exception as e:
         print(f"GitHub Error: {e}")
+        error_msg = str(e)
+        if "404" in error_msg:
+             return {
+                "summary": "GitHub Error 404: Repository not found. It might be private or the URL is incorrect. (Or API rate limit exceeded)",
+                "files_count": 0,
+                "languages": "Unknown"
+            }
+        elif "403" in error_msg:
+             return {
+                "summary": f"GitHub Error 403: Rate limit exceeded or access denied. Please try again later.",
+                "files_count": 0,
+                "languages": "Unknown"
+            }
+            
         return {
             "summary": f"Failed to analyze GitHub repo: {str(e)}",
             "files_count": 0,
