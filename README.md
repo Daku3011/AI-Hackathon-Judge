@@ -5,7 +5,7 @@
 An AI-powered tool that analyzes your GitHub repository, PPT, and demo video to provide instant scores, feedback, and a "Why You Won't Win" reality check.
 
 <div align="center">
-  <img src="screenshots/Index.png" alt="Home Screen" width="800"/>
+  <img src="screenshots/Submisstion.png" alt="Home Screen" width="800"/>
   <p><em>Compare your project against personas like 'The VC' or 'Roast Master'</em></p>
 </div>
 
@@ -18,9 +18,7 @@ An AI-powered tool that analyzes your GitHub repository, PPT, and demo video to 
 *   **📈 Video & Speech Analytics**: Instant metrics for confidence, clarity, and pacing from your demo video transcripts.
 *   **🚀 Mentor Roadmap**: A tailor-made path from hackathon prototype to a production-ready product.
 
-## 🖼️ Gallery (Dec 2025 refresh)
-
-Latest UI and analysis screens from the current Gemini 2.5 Flash build:
+## 🖼️ Gallery
 
 | Landing & Persona Picker | Detailed Scorecard | Strengths vs Weaknesses |
 | :---: | :---: | :---: |
