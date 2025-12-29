@@ -89,7 +89,15 @@ function App() {
         {appState === 'results' && results && (
           <div className="grid lg:grid-cols-3 gap-8 animate-in slide-in-from-bottom-8 duration-700 fade-in">
             <div className="lg:col-span-1 order-2 lg:order-1">
-              <ScoreCard scores={results.scores} onRetry={() => setAppState('input')} />
+              <ScoreCard
+                scores={results.scores}
+                overallScore={
+                  results.scores.overall_score ||
+                  ((Object.values(results.scores).reduce((a, b) => a + b, 0) + (results.security_issues.length === 0 ? 10 : 3)) / 7).toFixed(1)
+                }
+                securityIssues={results.security_issues}
+                onRetry={() => setAppState('input')}
+              />
             </div>
             <div className="lg:col-span-2 order-1 lg:order-2">
               <FeedbackSection

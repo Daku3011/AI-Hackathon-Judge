@@ -107,11 +107,19 @@ def analyze_repo(repo_url: str):
         except:
             files_list.append("Error fetching file list")
 
-        # 3. Construct Summary for LLM
+        # 3. Get Languages
+        languages_data = {}
+        try:
+            languages_data = repo.get_languages()
+        except:
+            languages_data = {repo.language: 100} if repo.language else {}
+
+        # 4. Construct Summary for LLM
         summary = f"Repository: {full_name}\n"
         summary += f"Description: {repo.description}\n"
         summary += f"Stars: {repo.stargazers_count}\n"
-        summary += f"Primary Language: {repo.language}\n\n"
+        summary += f"Primary Language: {repo.language}\n"
+        summary += f"Languages Detail: {languages_data}\n\n"
         
         summary += f"--- SECURITY REPORT ---\n"
         if detected_issues:
@@ -138,7 +146,7 @@ def analyze_repo(repo_url: str):
         return {
             "summary": summary,
             "files_count": len(files_list),
-            "languages": repo.language,
+            "languages": languages_data,
             "security_issues": detected_issues
         }
 
