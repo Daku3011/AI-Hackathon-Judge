@@ -41,7 +41,10 @@ function App() {
         improvements: result.improvements || [],
         questions: result.questions || [],
         ppt_analysis: result.ppt_analysis || {},
-        video_analysis: result.video_analysis || {}
+        video_analysis: result.video_analysis || {},
+        win_probability: result.win_probability || 0,
+        project_roadmap: result.project_roadmap || [],
+        security_issues: result.security_issues || []
       });
       setAppState('results');
 
@@ -100,6 +103,9 @@ function App() {
                 questions={results.questions}
                 pptAnalysis={results.ppt_analysis}
                 videoAnalysis={results.video_analysis}
+                winProbability={results.win_probability}
+                roadmap={results.project_roadmap}
+                securityIssues={results.security_issues}
               />
             </div>
           </div>

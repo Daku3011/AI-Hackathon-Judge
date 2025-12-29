@@ -1,8 +1,41 @@
 import React from 'react';
 
-const FeedbackSection = ({ feedback, whyWontWin, strengths = [], improvements = [], questions = [], pptAnalysis = {}, videoAnalysis = {} }) => {
+const FeedbackSection = ({ feedback, whyWontWin, strengths = [], improvements = [], questions = [], pptAnalysis = {}, videoAnalysis = {}, winProbability = 0, roadmap = [], securityIssues = [] }) => {
     return (
         <div className="space-y-6 h-full">
+            {/* Win Probability & Security Banner */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className={`col-span-1 md:col-span-2 p-6 rounded-2xl border flex items-center gap-4 ${winProbability > 70 ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white border-emerald-400' : winProbability > 40 ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white border-amber-400' : 'bg-gradient-to-r from-red-500 to-pink-600 text-white border-red-400'}`}>
+                    <div className="text-4xl font-black">{winProbability}%</div>
+                    <div>
+                        <div className="text-sm font-bold uppercase opacity-80">Win Potential™</div>
+                        <div className="text-sm opacity-90">{winProbability > 70 ? "This project is a contender!" : winProbability > 40 ? "Needs significant polish." : "Start over."}</div>
+                    </div>
+                </div>
+
+                <div className="col-span-1 bg-white p-6 rounded-2xl border border-slate-200 flex flex-col justify-center">
+                    <div className="text-sm font-bold text-slate-500 uppercase mb-1">Security Score</div>
+                    <div className="flex items-center gap-2">
+                        <div className={`w-3 h-3 rounded-full ${securityIssues.length === 0 ? 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]' : 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]'}`}></div>
+                        <span className="font-bold text-slate-800">{securityIssues.length === 0 ? "Safe" : `${securityIssues.length} Issues Found`}</span>
+                    </div>
+                </div>
+            </div>
+
+            {/* Security Alerts */}
+            {securityIssues.length > 0 && (
+                <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+                    <h3 className="text-red-800 font-bold flex items-center gap-2 mb-2">
+                        <span>🛡️</span> Security Critical Alerts
+                    </h3>
+                    <ul className="space-y-1">
+                        {securityIssues.map((issue, i) => (
+                            <li key={i} className="text-red-700 text-sm font-mono bg-red-100/50 p-2 rounded">{issue}</li>
+                        ))}
+                    </ul>
+                </div>
+            )}
+
             {/* Strengths & Improvements Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Key Strengths */}
@@ -37,6 +70,25 @@ const FeedbackSection = ({ feedback, whyWontWin, strengths = [], improvements = 
                     </ul>
                 </div>
             </div>
+
+            {/* Project Roadmap */}
+            {roadmap.length > 0 && (
+                <div className="bg-indigo-50/50 backdrop-blur-xl p-6 rounded-2xl border border-indigo-100">
+                    <h3 className="text-lg font-bold text-indigo-800 mb-4 flex items-center gap-2">
+                        <span>🚀</span> Recommended Roadmap (Mentor Mode)
+                    </h3>
+                    <div className="space-y-4 relative before:absolute before:left-[11px] before:top-2 before:h-full before:w-[2px] before:bg-indigo-200">
+                        {roadmap.map((step, i) => (
+                            <div key={i} className="relative pl-8">
+                                <div className="absolute left-0 top-1 w-6 h-6 bg-indigo-100 border-2 border-indigo-500 rounded-full flex items-center justify-center text-[10px] font-bold text-indigo-700 z-10">
+                                    {i + 1}
+                                </div>
+                                <p className="text-indigo-900 text-sm font-medium">{step}</p>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             {/* Specialized Analysis Grid */}
             {(pptAnalysis.comments || videoAnalysis.comments) && (
@@ -78,9 +130,14 @@ const FeedbackSection = ({ feedback, whyWontWin, strengths = [], improvements = 
                                         ))}
                                     </div>
                                 </div>
-                                <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold mb-2 ${videoAnalysis.is_engaging ? 'bg-teal-100 text-teal-700' : 'bg-slate-100 text-slate-600'}`}>
-                                    {videoAnalysis.is_engaging ? "Highly Engaging" : "Needs More Energy"}
-                                </span>
+                                <div className="flex flex-wrap gap-2 mb-2">
+                                    <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold ${videoAnalysis.confidence_score > 7 ? 'bg-teal-100 text-teal-700' : 'bg-slate-100 text-slate-600'}`}>
+                                        Confidence: {videoAnalysis.confidence_score}/10
+                                    </span>
+                                    <span className="inline-block px-3 py-1 rounded-full text-xs font-bold bg-sky-100 text-sky-700">
+                                        Pacing: {videoAnalysis.pacing_score}/10
+                                    </span>
+                                </div>
                                 <p className="text-cyan-900/80 text-sm leading-relaxed">
                                     {videoAnalysis.comments}
                                 </p>

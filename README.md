@@ -2,59 +2,65 @@
 
 **Evaluate your hackathon project locally before the real judges do.**
 
-An AI-powered tool that analyzes your GitHub repository and demo video to provide instant scores, feedback, and a "Why You Won't Win" reality check.
+An AI-powered tool that analyzes your GitHub repository, PPT, and demo video to provide instant scores, feedback, and a "Why You Won't Win" reality check.
 
 <div align="center">
   <img src="screenshots/Index.png" alt="Home Screen" width="800"/>
   <p><em>Compare your project against personas like 'The VC' or 'Roast Master'</em></p>
 </div>
 
-| Scorecard | AI Feedback | Reality Check |
+## ✨ New & Advanced Features
+
+*   **👥 Multi-Judge Consensus scoring**: Parallel evaluation by 5 AI judge personas (VC, CTO, Product, UI/UX, Professor) to provide an aggregated, unbiased score.
+*   **🛡️ Auto-Bug & Security Issue Detection**: Static analysis that finds hardcoded API keys, vulnerable dependencies, and logic flaws.
+*   **❓ Auto-Generated Judge Questions**: Specific Q&A and Viva questions generated based on your project's unique tech stack and pitch.
+*   **🏆 "Will It Win?" Prediction**: A data-driven (and brutal) prediction of your project's winning probability.
+*   **📈 Video & Speech Analytics**: Instant metrics for confidence, clarity, and pacing from your demo video transcripts.
+*   **🚀 Mentor Roadmap**: A tailor-made path from hackathon prototype to a production-ready product.
+
+## 🖼️ Gallery (Dec 2025 refresh)
+
+Latest UI and analysis screens from the current Gemini 2.5 Flash build:
+
+| Landing & Persona Picker | Detailed Scorecard | Strengths vs Weaknesses |
 | :---: | :---: | :---: |
-| <img src="screenshots/Scoreboard.png" width="300" /> | <img src="screenshots/AI_Verdict.png" width="300" /> | <img src="screenshots/Wont_Work.png" width="300" /> |
+| <img src="screenshots/Index.png" width="310" /> | <img src="screenshots/Detailed_Scorecard.png" width="310" /> | <img src="screenshots/Strengths_Weaknesses.png" width="310" /> |
 
-## ✨ Features
+| Suggested Questions | Video Analysis | AI Final Verdict |
+| :---: | :---: | :---: |
+| <img src="screenshots/Suggested_Questions.png" width="310" /> | <img src="screenshots/Video_Presentation_Analysis.png" width="310" /> | <img src="screenshots/AI_Verdict_New.png" width="310" /> |
 
-*   **🔍 Deep Repo Analysis**: Reads your README, file structure, and code to assess quality.
-*   **🎥 Video Transcript Analysis**: Watches your YouTube demo to understand your pitch.
-*   **🎭 Judge Personas**: Choose who judges you!
-    *   ⚖️ **Standard**: Balanced feedback.
-    *   💸 **The VC**: Obsessed with ROI and scale ("Where's the moat?").
-    *   🧔🏻‍♂️ **The CTO**: Cranky about code quality ("No tests? 0/10").
-    *   🔥 **Roast Master**: Brutal, funny, and technically accurate insults.
-*   **💎 Modern UI**: Beautiful, glassmorphic light-theme design.
+| Why It Won't Win | Security & Mentorship Roadmap |
+| :---: | :---: |
+| <img src="screenshots/Why_It_Wont_Win.png" width="400" /> | <img src="screenshots/Security_Roadmap.png" width="400" /> |
+
+## 🎭 Judge Personas
+
+Choose who judges you!
+*   ⚖️ **Standard**: Balanced feedback.
+*   💸 **The VC**: Obsessed with ROI, market size, and scale ("Where's the moat?").
+*   🧔🏻‍♂️ **The CTO**: Cranky about code quality, architecture, and security ("No tests? 0/10").
+*   📦 **Product Manager**: Focuses on problem-solution fit and user experience.
+*   🎨 **UI/UX Designer**: Strictly evaluates visual hierarchy and aesthetics.
+*   🎓 **The Professor**: Looks for algorithmic efficiency and theoretical correctness.
+*   🔥 **Roast Master**: Brutal, funny, and technically accurate insults.
 
 ## 🛠️ Tech Stack
 
 *   **Frontend**: React, Vite, Tailwind CSS (v4)
 *   **Backend**: Python, FastAPI
-*   **AI**: Google Gemini (via `google-generativeai`)
-*   **Build**: PyInstaller (for standalone executable)
+*   **AI**: Google Gemini 2.5 Flash (`models/gemini-2.5-flash` via `google-generativeai`)
+*   **Analysis**: PyGithub (Repo Analysis), Speech-to-Text (Video Analysis)
+*   **Deployment**: Docker & Docker Compose
 
 ## 🚀 Getting Started
 
-You can run the application either as a standalone executable or by setting up the development environment.
-
-### Option 1: Standalone Executable (Recommended)
-
-**Linux**
-1.  Download `project_judge_linux.zip` from Releases.
-2.  Extract it and run:
-    ```bash
-    ./project_judge
-    ```
-    *(Make sure your `.env` file with `GEMINI_API_KEY` is in the same folder)*
-
-**Windows**
-1.  Run `build_windows.bat` to generate the `.exe` (requires Python & Node.js).
-2.  Run `project_judge.exe`.
-
-### Option 2: Docker (Easiest for Dev)
+### Option 1: Docker (Recommended for Dev)
 
 1.  Ensure you have **Docker** and **Docker Compose** installed.
 2.  Set your API keys in a `.env` file in the project root:
     ```bash
-    GEMINI_API_KEY=your_key_here
+    GEMINI_API_KEY=your_key_here  # must allow models/gemini-2.5-flash
     GITHUB_TOKEN=your_token_here
     ```
 3.  Run the application:
@@ -62,38 +68,35 @@ You can run the application either as a standalone executable or by setting up t
     docker-compose up --build
     ```
 4.  Open `http://localhost:8000` in your browser.
-    *(Note: On Linux, you might need `sudo` for docker commands)*
 
-### Option 3: Development Setup
+### Option 2: Standalone Executable
 
-**Prerequisites**
-*   Node.js (v18+)
-*   Python (v3.10+)
-*   A Google Gemini API Key
+**Linux**
+1.  Download `project_judge_linux.zip` from Releases.
+2.  Extract and run `./project_judge`.
 
-**1. Backend Setup**
+**Windows**
+1.  Run `build_windows.bat` to generate the `.exe`.
+2.  Run `project_judge.exe`.
+
+### Option 3: Manual Development Setup
+
+**1. Backend**
 ```bash
 cd backend
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+source venv/bin/activate
 pip install -r requirements.txt
-
-# Set your API Key
-export GEMINI_API_KEY="your_api_key_here"
-
-# Run the server
 uvicorn main:app --reload --port 8000
 ```
 
-**2. Frontend Setup**
+**2. Frontend**
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
 
-Open `http://localhost:5173` in your browser.
+## 📝 Note
 
-## 📝 License
-
-MIT License. Built for hackathon winners (and losers).
+Built for hackathon winners (and those who need a reality check).

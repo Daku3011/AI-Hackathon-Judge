@@ -61,7 +61,7 @@ Explain the expected improvement or value.
 If the feature relates to AI or LLM evaluation, please include:
 
 - Affected module or component
-- Model(s) involved (e.g., Gemini)
+- Model(s) involved (e.g., Gemini 2.5 Flash)
 - Expected change in scoring or evaluation logic
 - Any safety or bias considerations
 

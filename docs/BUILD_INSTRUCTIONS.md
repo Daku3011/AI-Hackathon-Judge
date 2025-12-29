@@ -38,6 +38,12 @@ This project can be built as a standalone executable for both Linux and Windows.
 ## Notes
 
 -   **Frontend Assets**: The build process automatically builds the React frontend and bundles it into the executable.
--   **API Key**: The executable still needs the `GEMINI_API_KEY`. 
-    -   Create a `.env` file next to the executable (in `dist/project_judge/`) with your key: `GEMINI_API_KEY=your_key_here`.
-    -   Or set it as a system environment variable.
+-   **API Keys**: The executable needs environment variables to function correctly.
+    -   Create a `.env` file next to the executable (e.g., in `dist/project_judge/`) with your keys:
+        ```bash
+        GEMINI_API_KEY=your_gemini_key
+        GITHUB_TOKEN=your_github_personal_access_token
+        ```
+    -   `GEMINI_API_KEY` is **required** for AI analysis.
+    -   `GITHUB_TOKEN` is **highly recommended** to avoid GitHub API rate limits and to allow analysis of private repositories (if permissions allow).
+-   **Errors**: If the build fails with "Directory not empty", try deleting the `build` and `dist` folders manually and running the script again.

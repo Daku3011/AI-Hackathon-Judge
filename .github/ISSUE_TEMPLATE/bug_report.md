@@ -69,7 +69,7 @@ If applicable, add screenshots, logs, or error messages to help explain the prob
 If the bug is related to AI evaluation or LLM behavior, please provide:
 
 - Prompt or input used
-- Model (e.g., Gemini)
+- Model (e.g., Gemini 2.5 Flash)
 - Output received
 - Why the output seems incorrect or unsafe
 

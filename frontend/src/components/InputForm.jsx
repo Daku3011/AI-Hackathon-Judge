@@ -86,6 +86,7 @@ const InputForm = ({ onSubmit, isLoading }) => {
                                 className="w-full p-4 pl-12 rounded-xl bg-slate-50 border border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none text-slate-800 font-medium appearance-none cursor-pointer"
                             >
                                 <option value="standard">⚖️ Standard Judge (Balanced)</option>
+                                <option value="consensus">🗳️ Multi-Judge Consensus (Panel)</option>
                                 <option value="vc">💸 The VC (Business & Scale)</option>
                                 <option value="cto">🧔🏻‍♂️ The Grumpy CTO (Code Quality)</option>
                                 <option value="roast">🔥 Roast Master (Ruthless & Funny)</option>

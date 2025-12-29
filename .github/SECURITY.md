@@ -53,7 +53,7 @@ Only officially released versions are supported for security updates.
 - Avoid exposing admin endpoints without strong safeguards.
 
 ### 5. **AI Prompt Safety**
-- Since the app interacts with LLMs (Google Gemini), guard against **prompt injection attacks** by:
+- Since the app interacts with LLMs (Google Gemini 2.5 Flash), guard against **prompt injection attacks** by:
   - Filtering or limiting user-controlled text injected into prompts.  
   - Applying sanity checks and strict token limits before sending content to LLM APIs. :contentReference[oaicite:1]{index=1}
 
@@ -92,7 +92,7 @@ Before every major release:
 
 ## 🧠 Third-Party Services
 
-This project uses external services (e.g., Google Gemini API):
+This project uses external services (e.g., Google Gemini 2.5 Flash API):
 - Only send necessary data — never send sensitive credentials.
 - Review Terms & Privacy of each external API.
 

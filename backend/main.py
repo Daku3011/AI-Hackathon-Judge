@@ -102,7 +102,7 @@ async def analyze_project(
              }
 
     # 1. Analyze Repo
-    repo_summary = ""
+    repo_data = {"summary": "No GitHub repository provided."}
     if github_url:
         repo_data = analyze_repo(github_url)
         
@@ -115,10 +115,7 @@ async def analyze_project(
                  "feedback": roast_msg,
                  "whyWontWin": "Because you didn't even submit a real project."
             }
-            
-        repo_summary = json.dumps(repo_data)
-    else:
-        repo_summary = "No GitHub repository provided."
+    # else repo_data stays as default
 
     # 2. Analyze Video
     transcript = ""
@@ -184,14 +181,15 @@ async def analyze_project(
             "whyWontWin": "The UI is basic. Adding animations would help."
          }
 
-    analysis_result = await evaluate_project(repo_summary, transcript, doc_text, ppt_text, persona)
+    analysis_result = await evaluate_project(repo_data.get("summary", ""), transcript, doc_text, ppt_text, persona)
     
     # Check if analysis_result is already a dict (error from judge_engine)
     if isinstance(analysis_result, dict):
         return {
             "scores": { "innovation": 0, "technical": 0, "relevance": 0, "uiux": 0, "impact": 0, "presentation": 0 },
             "feedback": f"Error during analysis: {analysis_result.get('error')}",
-            "whyWontWin": "N/A"
+            "whyWontWin": "N/A",
+            "win_probability": 0
         }
 
     # Parse the LLM output (assuming it returns JSON string)
@@ -213,6 +211,9 @@ async def analyze_project(
             "questions": data.get("suggested_questions", []),
             "feedback": data.get("summary_feedback", "No feedback provided."),
             "whyWontWin": data.get("why_it_wont_win", "N/A"),
+            "win_probability": data.get("win_probability", 0),
+            "project_roadmap": data.get("project_roadmap", []),
+            "security_issues": repo_data.get("security_issues", []),
             "ppt_analysis": data.get("ppt_analysis", {}),
             "video_analysis": data.get("video_analysis", {})
         }
