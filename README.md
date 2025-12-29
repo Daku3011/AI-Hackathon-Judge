@@ -30,9 +30,9 @@ Latest UI and analysis screens from the current Gemini 2.5 Flash build:
 | :---: | :---: | :---: |
 | <img src="screenshots/Suggested_Questions.png" width="310" /> | <img src="screenshots/Video_Presentation_Analysis.png" width="310" /> | <img src="screenshots/AI_Verdict_New.png" width="310" /> |
 
-| Why It Won't Win | Security & Mentorship Roadmap |
-| :---: | :---: |
-| <img src="screenshots/Why_It_Wont_Win.png" width="400" /> | <img src="screenshots/Security_Roadmap.png" width="400" /> |
+| Why It Won't Win |
+| :---: |
+| <img src="screenshots/Why_It_Wont_Win.png" width="400" /> |
 
 ## 🎭 Judge Personas
 
