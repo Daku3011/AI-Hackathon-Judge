@@ -1,23 +1,34 @@
 import React from 'react';
 
-const FeedbackSection = ({ feedback, whyWontWin, strengths = [], improvements = [], questions = [], pptAnalysis = {}, videoAnalysis = {}, winProbability = 0, roadmap = [], securityIssues = [] }) => {
+const FeedbackSection = ({ feedback, whyWontWin, strengths = [], improvements = [], questions = [], pptAnalysis = {}, videoAnalysis = {}, winProbability = 0, roadmap = [], securityIssues = [], languages = "Unknown", filesCount = 0, judgeName = "AI Judge" }) => {
     return (
         <div className="space-y-6 h-full">
-            {/* Win Probability & Security Banner */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className={`col-span-1 md:col-span-2 p-6 rounded-2xl border flex items-center gap-4 ${winProbability > 70 ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white border-emerald-400' : winProbability > 40 ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white border-amber-400' : 'bg-gradient-to-r from-red-500 to-pink-600 text-white border-red-400'}`}>
-                    <div className="text-4xl font-black">{winProbability}%</div>
-                    <div>
-                        <div className="text-sm font-bold uppercase opacity-80">Win Potential™</div>
-                        <div className="text-sm opacity-90">{winProbability > 70 ? "This project is a contender!" : winProbability > 40 ? "Needs significant polish." : "Start over."}</div>
+            {/* Project Overview Stats */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="bg-white/60 backdrop-blur-md p-4 rounded-xl border border-white/80 shadow-sm">
+                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Language</div>
+                    <div className="text-lg font-bold text-slate-700 flex items-center gap-2">
+                        <span className="text-indigo-500">💻</span> {languages}
                     </div>
                 </div>
-
-                <div className="col-span-1 bg-white p-6 rounded-2xl border border-slate-200 flex flex-col justify-center">
-                    <div className="text-sm font-bold text-slate-500 uppercase mb-1">Security Score</div>
-                    <div className="flex items-center gap-2">
-                        <div className={`w-3 h-3 rounded-full ${securityIssues.length === 0 ? 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]' : 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]'}`}></div>
-                        <span className="font-bold text-slate-800">{securityIssues.length === 0 ? "Safe" : `${securityIssues.length} Issues Found`}</span>
+                <div className="bg-white/60 backdrop-blur-md p-4 rounded-xl border border-white/80 shadow-sm">
+                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Codebase</div>
+                    <div className="text-lg font-bold text-slate-700 flex items-center gap-2">
+                        <span className="text-emerald-500">📁</span> {filesCount} Files
+                    </div>
+                </div>
+                <div className={`p-4 rounded-xl border backdrop-blur-md shadow-sm flex flex-col justify-center ${winProbability > 70 ? 'bg-emerald-50/80 border-emerald-100' : winProbability > 40 ? 'bg-amber-50/80 border-amber-100' : 'bg-red-50/80 border-red-100'}`}>
+                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Win Probability™</div>
+                    <div className={`text-lg font-black flex items-center gap-2 ${winProbability > 70 ? 'text-emerald-600' : winProbability > 40 ? 'text-amber-600' : 'text-red-600'}`}>
+                        {winProbability}%
+                        <span className="text-[10px] font-medium opacity-60">{winProbability > 70 ? "Legendary" : winProbability > 40 ? "Candidate" : "Needs Pivot"}</span>
+                    </div>
+                </div>
+                <div className="bg-white/60 backdrop-blur-md p-4 rounded-xl border border-white/80 shadow-sm">
+                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Security Score</div>
+                    <div className="flex items-center gap-2 text-lg font-bold">
+                        <div className={`w-2 h-2 rounded-full animate-pulse ${securityIssues.length === 0 ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                        <span className="text-slate-700">{securityIssues.length === 0 ? "Protected" : "Vulnerable"}</span>
                     </div>
                 </div>
             </div>
@@ -137,6 +148,9 @@ const FeedbackSection = ({ feedback, whyWontWin, strengths = [], improvements = 
                                     <span className="inline-block px-3 py-1 rounded-full text-xs font-bold bg-sky-100 text-sky-700">
                                         Pacing: {videoAnalysis.pacing_score}/10
                                     </span>
+                                    <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold ${videoAnalysis.filler_words === 'low' ? 'bg-emerald-100 text-emerald-700' : 'bg-orange-100 text-orange-700'}`}>
+                                        Filler Words: {videoAnalysis.filler_words || "N/A"}
+                                    </span>
                                 </div>
                                 <p className="text-cyan-900/80 text-sm leading-relaxed">
                                     {videoAnalysis.comments}
@@ -172,7 +186,7 @@ const FeedbackSection = ({ feedback, whyWontWin, strengths = [], improvements = 
                         🤖
                     </div>
                     <h3 className="text-2xl font-bold text-slate-800">
-                        AI Verdict
+                        {judgeName}'s Verdict
                     </h3>
                 </div>
 

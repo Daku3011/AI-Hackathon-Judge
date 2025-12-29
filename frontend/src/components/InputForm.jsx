@@ -20,7 +20,22 @@ const InputForm = ({ onSubmit, isLoading }) => {
     };
 
     return (
-        <div className="max-w-2xl mx-auto">
+        <div className="max-w-2xl mx-auto space-y-8">
+            {/* Feature Highlights Grid - Now at the Top */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {[
+                    { icon: '👥', title: 'Multi-Judge Panel', desc: 'VC, CTO, and PM personas evaluate your pitch in parallel.' },
+                    { icon: '🛡️', title: 'Security Scan', desc: 'Auto-detects API key leaks and vulnerable configurations.' },
+                    { icon: '🚀', title: 'Mentor Roadmap', desc: 'Get a clear path to turn your prototype into a product.' },
+                ].map((feat, i) => (
+                    <div key={i} className="p-4 rounded-xl bg-white/40 border border-white/60 text-center backdrop-blur-sm transition-transform hover:scale-[1.02]">
+                        <div className="text-3xl mb-2">{feat.icon}</div>
+                        <h4 className="font-bold text-slate-800 text-sm mb-1">{feat.title}</h4>
+                        <p className="text-slate-500 text-[11px] leading-relaxed">{feat.desc}</p>
+                    </div>
+                ))}
+            </div>
+
             <div className="bg-white/80 backdrop-blur-xl p-6 md:p-10 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/50 relative overflow-hidden">
                 {/* Decoration */}
                 <div className="absolute top-0 left-0 w-2 h-full bg-gradient-to-b from-indigo-500 to-purple-600"></div>
@@ -117,7 +132,7 @@ const InputForm = ({ onSubmit, isLoading }) => {
                 </form>
             </div>
 
-            <div className="mt-8 text-center text-slate-400 text-sm">
+            <div className="text-center text-slate-400 text-sm">
                 <p>Ensure your repo is public. We don't store your code.</p>
             </div>
         </div>

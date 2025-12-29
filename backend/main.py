@@ -45,23 +45,30 @@ import sys
 if getattr(sys, 'frozen', False):
     # Running in a PyInstaller bundle
     base_path = os.path.dirname(sys.executable)
-    # PyInstaller v6+ puts contents in _internal by default
     internal_path = os.path.join(base_path, "_internal")
     if os.path.exists(internal_path):
         base_path = internal_path
     
     frontend_dist = os.path.join(base_path, "frontend", "dist")
 else:
-    # Running in a normal Python environment
-    base_path = os.path.dirname(os.path.dirname(__file__))
-    frontend_dist = os.path.join(base_path, "frontend", "dist")
+    # Running in a normal Python environment (Local or Docker)
+    # Check 1: Multi-stage Docker build location (survives volumes)
+    docker_dist = "/frontend_dist"
+    # Check 2: Local dev: ../frontend/dist
+    local_dist = os.path.abspath(os.path.join(os.path.dirname(os.path.dirname(__file__)), "frontend", "dist"))
+    
+    if os.path.isdir(docker_dist):
+        frontend_dist = docker_dist
+    else:
+        frontend_dist = local_dist
 
 assets_path = os.path.join(frontend_dist, "assets")
 
 if os.path.isdir(assets_path):
     app.mount("/assets", StaticFiles(directory=assets_path), name="assets")
 else:
-    print(f"WARNING: Frontend assets not found at {assets_path}. Run 'npm run build' in frontend directory.")
+    print(f"WARNING: Frontend assets not found at {assets_path}.")
+    print(f"Searched in: {docker_dist} and {local_dist}")
 
 class ProjectSubmission(BaseModel):
     github_url: str
@@ -215,7 +222,10 @@ async def analyze_project(
             "project_roadmap": data.get("project_roadmap", []),
             "security_issues": repo_data.get("security_issues", []),
             "ppt_analysis": data.get("ppt_analysis", {}),
-            "video_analysis": data.get("video_analysis", {})
+            "video_analysis": data.get("video_analysis", {}),
+            "languages": repo_data.get("languages", "Unknown"),
+            "files_count": repo_data.get("files_count", 0),
+            "judge_name": data.get("judge_name", "AI Judge")
         }
     except Exception as e:
         print(f"JSON Parse Error: {e}")

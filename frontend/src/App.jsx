@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import InputForm from './components/InputForm';
 import ScoreCard from './components/Scorecard';
 import FeedbackSection from './components/FeedbackSection';
+import LoadingScreen from './components/LoadingScreen';
 
 function App() {
   const [appState, setAppState] = useState('input'); // input, analyzing, results
@@ -44,7 +45,10 @@ function App() {
         video_analysis: result.video_analysis || {},
         win_probability: result.win_probability || 0,
         project_roadmap: result.project_roadmap || [],
-        security_issues: result.security_issues || []
+        security_issues: result.security_issues || [],
+        languages: result.languages || "Unknown",
+        files_count: result.files_count || 0,
+        judge_name: result.judge_name || "AI Judge"
       });
       setAppState('results');
 
@@ -79,14 +83,7 @@ function App() {
         )}
 
         {appState === 'analyzing' && (
-          <div className="text-center py-32 animate-in fade-in duration-700">
-            <div className="relative inline-block">
-              <div className="absolute inset-0 bg-indigo-500 blur-xl opacity-20 animate-pulse"></div>
-              <div className="relative inline-block animate-spin rounded-full h-16 w-16 border-4 border-indigo-100 border-t-indigo-600 mb-6"></div>
-            </div>
-            <h2 className="text-2xl font-bold text-slate-800 mb-2">Analyzing Project...</h2>
-            <p className="text-slate-500">Reading GitHub repo, watching video, and judging life choices.</p>
-          </div>
+          <LoadingScreen />
         )}
 
         {appState === 'results' && results && (
@@ -106,6 +103,9 @@ function App() {
                 winProbability={results.win_probability}
                 roadmap={results.project_roadmap}
                 securityIssues={results.security_issues}
+                languages={results.languages}
+                filesCount={results.files_count}
+                judgeName={results.judge_name}
               />
             </div>
           </div>

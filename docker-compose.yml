@@ -1,15 +1,13 @@
-version: '3.8'
-
 services:
   backend:
-    build: ./backend
+    build: .
     ports:
       - "8000:8000"
     env_file:
       - .env
     volumes:
-      - ./backend:/app # Optional: for hot reloading in dev
-      - ./frontend:/frontend # Mount frontend for static serving
+      - ./backend:/app # For hot reloading in dev
+      # Frontend is now built inside the container and served from /app/frontend/dist
     restart: always
 
 # Frontend can be deployed separately or added here if needed
