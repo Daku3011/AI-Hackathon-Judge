@@ -211,7 +211,7 @@ async def _evaluate_with_gemini(api_key, prompt):
     genai.configure(api_key=api_key)
     try:
         # Fixed Model Name: gemini-1.5-flash
-        model = genai.GenerativeModel('models/gemini-1.5-flash')
+        model = genai.GenerativeModel('models/gemini-2.5-flash')
         response = await model.generate_content_async(
             prompt,
             generation_config={"response_mime_type": "application/json"}
@@ -228,7 +228,7 @@ async def generate_roast(input_text: str):
     
     genai.configure(api_key=api_key)
     try:
-        model = genai.GenerativeModel('models/gemini-1.5-flash')
+        model = genai.GenerativeModel('models/gemini-2.5-flash')
         prompt = f"""
         The user provided this garbage: "{input_text}"
         Roast them for being incompetent. Be brief (2 sentences) but brutal.
