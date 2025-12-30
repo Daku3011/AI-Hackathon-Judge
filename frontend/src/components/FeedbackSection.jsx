@@ -250,10 +250,11 @@ const FeedbackSection = ({ feedback, whyWontWin, strengths = [], improvements = 
             )}
 
             {/* Specialized Analysis Grid */}
-            {(pptAnalysis.comments || videoAnalysis.comments) && (
+            {/* Specialized Analysis Grid */}
+            {(Object.keys(pptAnalysis).length > 0 || Object.keys(videoAnalysis).length > 0) && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* PPT Analysis */}
-                    {pptAnalysis.comments && (
+                    {Object.keys(pptAnalysis).length > 0 && (
                         <div className="bg-orange-50/50 backdrop-blur-xl p-6 rounded-2xl border border-orange-100 shadow-sm">
                             <h3 className="text-lg font-bold text-orange-800 mb-4 flex items-center gap-2">
                                 <span>📑</span> Presentation Analysis
@@ -268,14 +269,14 @@ const FeedbackSection = ({ feedback, whyWontWin, strengths = [], improvements = 
                                     </span>
                                 </div>
                                 <p className="text-orange-900/80 text-sm leading-relaxed italic">
-                                    "{pptAnalysis.comments}"
+                                    "{pptAnalysis.comments || "No specific comments provided."}"
                                 </p>
                             </div>
                         </div>
                     )}
 
                     {/* Video Analysis */}
-                    {videoAnalysis.comments && (
+                    {Object.keys(videoAnalysis).length > 0 && (
                         <div className="bg-cyan-50/50 backdrop-blur-xl p-6 rounded-2xl border border-cyan-100 shadow-sm">
                             <h3 className="text-lg font-bold text-cyan-800 mb-4 flex items-center gap-2">
                                 <span>🎥</span> Video Pitch Analysis
@@ -291,17 +292,17 @@ const FeedbackSection = ({ feedback, whyWontWin, strengths = [], improvements = 
                                 </div>
                                 <div className="flex flex-wrap gap-2 mb-2">
                                     <span className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${videoAnalysis.confidence_score > 7 ? 'bg-teal-100 text-teal-700' : 'bg-slate-100 text-slate-600'}`}>
-                                        Conf: {videoAnalysis.confidence_score}/10
+                                        Conf: {videoAnalysis.confidence_score !== undefined ? `${videoAnalysis.confidence_score}/10` : "N/A"}
                                     </span>
                                     <span className="inline-block px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-sky-100 text-sky-700">
-                                        Pace: {videoAnalysis.pacing_score}/10
+                                        Pace: {videoAnalysis.pacing_score !== undefined ? `${videoAnalysis.pacing_score}/10` : "N/A"}
                                     </span>
                                     <span className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${videoAnalysis.filler_words === 'low' ? 'bg-emerald-100 text-emerald-700' : 'bg-orange-100 text-orange-700'}`}>
                                         Filler: {videoAnalysis.filler_words || "N/A"}
                                     </span>
                                 </div>
                                 <p className="text-cyan-900/80 text-sm leading-relaxed italic">
-                                    "{videoAnalysis.comments}"
+                                    "{videoAnalysis.comments || "No specific comments provided."}"
                                 </p>
                             </div>
                         </div>

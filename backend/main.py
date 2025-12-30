@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional
 from services.github_analyzer import analyze_repo
-from services.video_analyzer import get_video_transcript
+from services.video_analyzer import get_video_transcript, extract_video_id
 from services.doc_analyzer import extract_text_from_pdf
 from services.judge_engine import evaluate_project, generate_roast
 from services.ppt_analyzer import extract_text_from_ppt
@@ -127,12 +127,12 @@ async def analyze_project(
     # 2. Analyze Video
     transcript = ""
     if video_url:
-        # Extract video ID from URL (basic logic)
-        try:
-            video_id = video_url.split("v=")[1].split("&")[0]
+        # Extract video ID from URL
+        video_id = extract_video_id(video_url)
+        if video_id:
             transcript = get_video_transcript(video_id)
-        except:
-             transcript = "Could not extract video ID or transcript."
+        else:
+             transcript = "Could not extract video ID from URL."
 
     # 3. Analyze Docs
     doc_text = "No documents provided."

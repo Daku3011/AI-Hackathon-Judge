@@ -7,3 +7,4 @@ PyGithub
 python-multipart
 python-dotenv
 python-pptx
+anthropic

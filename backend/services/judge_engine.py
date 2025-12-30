@@ -1,4 +1,5 @@
 import google.generativeai as genai
+import anthropic
 import os
 import asyncio
 import json
@@ -65,14 +66,28 @@ async def run_consensus_panel(repo_data, transcript, doc_text, ppt_text):
     feedbacks = []
     reasons_loss = []
     
+    # Helper to safely parse scores
+    def safe_get_score(data, key):
+        val = data.get(key, 0)
+        if isinstance(val, (int, float)):
+            return val
+        if isinstance(val, str):
+            # Remove % if present and try to parse
+            clean_val = val.replace('%', '').strip()
+            try:
+                return float(clean_val)
+            except ValueError:
+                return 0
+        return 0
+
     for res in valid_results:
-        aggregated["innovation_score"] += res.get("innovation_score", 0)
-        aggregated["technical_score"] += res.get("technical_score", 0)
-        aggregated["relevance_score"] += res.get("relevance_score", 0)
-        aggregated["ui_ux_score"] += res.get("ui_ux_score", 0)
-        aggregated["impact_score"] += res.get("impact_score", 0)
-        aggregated["presentation_score"] += res.get("presentation_score", 0)
-        aggregated["win_probability"] += res.get("win_probability", 0)
+        aggregated["innovation_score"] += safe_get_score(res, "innovation_score")
+        aggregated["technical_score"] += safe_get_score(res, "technical_score")
+        aggregated["relevance_score"] += safe_get_score(res, "relevance_score")
+        aggregated["ui_ux_score"] += safe_get_score(res, "ui_ux_score")
+        aggregated["impact_score"] += safe_get_score(res, "impact_score")
+        aggregated["presentation_score"] += safe_get_score(res, "presentation_score")
+        aggregated["win_probability"] += safe_get_score(res, "win_probability")
         
         aggregated["key_strengths"].extend(res.get("key_strengths", []))
         aggregated["areas_for_improvement"].extend(res.get("areas_for_improvement", []))
@@ -102,12 +117,7 @@ async def run_consensus_panel(repo_data, transcript, doc_text, ppt_text):
     return json.dumps(aggregated)
 
 
-async def _evaluate_single_persona(api_key, repo_data, transcript, doc_text, ppt_text, persona):
-    try:
-        model = genai.GenerativeModel('models/gemini-2.5-flash')
-    except Exception as e:
-         return json.dumps({"error": f"Model creation failed: {e}"})
-
+async def _evaluate_single_persona(gemini_api_key, repo_data, transcript, doc_text, ppt_text, persona):
     # Define Persona Prompts
     persona_prompts = {
         "standard": "You are a Fair & Experienced Hackathon Judge. Evaluate objectively.",
@@ -164,15 +174,52 @@ async def _evaluate_single_persona(api_key, repo_data, transcript, doc_text, ppt
     }}
     """
     
+    # 1. Try Claude (Anthropic)
+    anthropic_key = os.getenv("ANTHROPIC_API_KEY")
+    if anthropic_key:
+        try:
+            print(f"DEBUG: Attempting to use Claude for {persona}...")
+            return await _evaluate_with_claude(anthropic_key, prompt)
+        except Exception as e:
+            print(f"WARNING: Claude API failed: {e}. Falling back to Gemini.")
+    else:
+        print("DEBUG: No ANTHROPIC_API_KEY found. Using Gemini.")
+
+    # 2. Fallback to Gemini
+    return await _evaluate_with_gemini(gemini_api_key, prompt)
+
+async def _evaluate_with_claude(api_key, prompt):
+    client = anthropic.AsyncAnthropic(api_key=api_key)
+    message = await client.messages.create(
+        model="claude-3-5-sonnet-20240620",
+        max_tokens=4000,
+        messages=[{"role": "user", "content": prompt}]
+    )
+    # Extract JSON from potential text wrapping
+    content = message.content[0].text
+    # Simple cleanup if Claude adds markdown code blocks
+    if "```json" in content:
+        content = content.split("```json")[1].split("```")[0]
+    elif "```" in content:
+        content = content.split("```")[1].split("```")[0]
+    return content.strip()
+
+async def _evaluate_with_gemini(api_key, prompt):
+    if not api_key:
+        return json.dumps({"error": "Missing GEMINI_API_KEY for fallback"})
+        
+    genai.configure(api_key=api_key)
     try:
+        # Fixed Model Name: gemini-1.5-flash
+        model = genai.GenerativeModel('models/gemini-1.5-flash')
         response = await model.generate_content_async(
             prompt,
             generation_config={"response_mime_type": "application/json"}
         )
         return response.text
     except Exception as e:
-        print(f"ERROR calling Gemini for {persona}: {str(e)}")
-        return json.dumps({"error": str(e)})
+        print(f"ERROR calling Gemini: {str(e)}")
+        return json.dumps({"error": f"Both AI models failed. Gemini Error: {str(e)}"})
 
 async def generate_roast(input_text: str):
     api_key = os.getenv("GEMINI_API_KEY")
@@ -181,7 +228,7 @@ async def generate_roast(input_text: str):
     
     genai.configure(api_key=api_key)
     try:
-        model = genai.GenerativeModel('models/gemini-2.5-flash')
+        model = genai.GenerativeModel('models/gemini-1.5-flash')
         prompt = f"""
         The user provided this garbage: "{input_text}"
         Roast them for being incompetent. Be brief (2 sentences) but brutal.

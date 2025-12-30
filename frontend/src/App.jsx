@@ -12,8 +12,8 @@ function App() {
     setAppState('analyzing');
 
     try {
-      // Use env var or default to localhost
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+      // Use relative path for production (same origin), localhost for local dev
+      const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:8000' : '');
       const options = {
         method: 'POST',
         body: data instanceof FormData ? data : JSON.stringify(data),
