@@ -174,16 +174,16 @@ async def _evaluate_single_persona(gemini_api_key, repo_data, transcript, doc_te
     }}
     """
     
-    # 1. Try Claude (Anthropic)
-    anthropic_key = os.getenv("ANTHROPIC_API_KEY")
-    if anthropic_key:
-        try:
-            print(f"DEBUG: Attempting to use Claude for {persona}...")
-            return await _evaluate_with_claude(anthropic_key, prompt)
-        except Exception as e:
-            print(f"WARNING: Claude API failed: {e}. Falling back to Gemini.")
-    else:
-        print("DEBUG: No ANTHROPIC_API_KEY found. Using Gemini.")
+    # 1. Try Claude (Anthropic) - DISABLED per user request
+    # anthropic_key = os.getenv("ANTHROPIC_API_KEY")
+    # if anthropic_key:
+    #     try:
+    #         print(f"DEBUG: Attempting to use Claude for {persona}...")
+    #         return await _evaluate_with_claude(anthropic_key, prompt)
+    #     except Exception as e:
+    #         print(f"WARNING: Claude API failed: {e}. Falling back to Gemini.")
+    # else:
+    #     print("DEBUG: No ANTHROPIC_API_KEY found. Using Gemini.")
 
     # 2. Fallback to Gemini
     return await _evaluate_with_gemini(gemini_api_key, prompt)
