@@ -15,7 +15,7 @@ CACHE_EXPIRY_SECONDS = int(os.getenv("TRANSCRIPT_CACHE_EXPIRY", 86400))  # 24 ho
 def _get_cache_path(video_id: str) -> Path:
     """Generate cache file path for a video ID."""
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
-    cache_key = hashlib.md5(video_id.encode()).hexdigest()
+    cache_key = hashlib.sha256(video_id.encode()).hexdigest()
     return CACHE_DIR / f"{cache_key}.json"
 
 def _get_cached_transcript(video_id: str) -> Optional[str]:
@@ -28,7 +28,10 @@ def _get_cached_transcript(video_id: str) -> Optional[str]:
         # Check if cache is expired
         cache_age = time.time() - cache_path.stat().st_mtime
         if cache_age > CACHE_EXPIRY_SECONDS:
-            cache_path.unlink()  # Delete expired cache
+            try:
+                cache_path.unlink()  # Delete expired cache
+            except (OSError, PermissionError) as e:
+                print(f"Failed to delete expired cache file: {e}")
             return None
         
         with open(cache_path, 'r') as f:
@@ -206,8 +209,13 @@ def _fetch_transcript_with_timeout(video_id: str, proxies: Optional[dict], cooki
     else:
         # Legacy API (v0.4.x or older)
         print("Using Legacy YouTubeTranscriptApi (Update recommended)")
+        print("WARNING: Legacy API may have thread-safety issues in multi-threaded environments")
         
-        # Set proxies via env vars temporarily
+        # Note: Legacy API requires environment variables but this creates race conditions
+        # in multi-threaded environments. For production, upgrade to modern API version.
+        # This is kept for backward compatibility only.
+        
+        # Set proxies via env vars temporarily (with mutex-like finally block)
         old_http = os.environ.get("HTTP_PROXY")
         old_https = os.environ.get("HTTPS_PROXY")
         
@@ -218,7 +226,7 @@ def _fetch_transcript_with_timeout(video_id: str, proxies: Optional[dict], cooki
         try:
             raw_transcript = ytt_api.fetch(video_id)
         finally:
-            # Restore env vars
+            # Always restore env vars to minimize race condition window
             if proxies:
                 if old_http is None:
                     os.environ.pop("HTTP_PROXY", None)
@@ -268,9 +276,22 @@ def analyze_video_quality(transcript: str) -> dict:
     avg_speaking_rate = 140
     estimated_duration = word_count / avg_speaking_rate
     
-    # Detect potential filler words
+    # Detect potential filler words using word boundaries
     filler_words = ['um', 'uh', 'like', 'you know', 'so', 'basically', 'actually', 'literally']
-    filler_count = sum(transcript.lower().count(word) for word in filler_words)
+    filler_count = 0
+    
+    # Use word boundaries to avoid false positives
+    transcript_lower = transcript.lower()
+    words_list = transcript_lower.split()
+    
+    for word in filler_words:
+        if ' ' in word:
+            # Multi-word filler phrase
+            filler_count += transcript_lower.count(word)
+        else:
+            # Single word - count exact matches
+            filler_count += words_list.count(word)
+    
     filler_percentage = (filler_count / word_count * 100) if word_count > 0 else 0
     
     quality_notes = []
