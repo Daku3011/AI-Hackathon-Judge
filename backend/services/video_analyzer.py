@@ -33,7 +33,7 @@ from google.genai import types
 CACHE_DIR = Path(os.getenv("TRANSCRIPT_CACHE_DIR", "/tmp/transcript_cache"))
 CACHE_EXPIRY = int(os.getenv("TRANSCRIPT_CACHE_EXPIRY", 86400))      # 24h
 BLOCK_EXPIRY = int(os.getenv("TRANSCRIPT_BLOCK_EXPIRY", 21600))      # 6h
-VIDEO_MODE = os.getenv("VIDEO_MODE", "full")                         # safe | balanced | full
+VIDEO_MODE = os.getenv("VIDEO_MODE", "safe")                         # safe | balanced | full
 
 CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -257,28 +257,30 @@ def analyze_video(video_url: str) -> Dict:
             "quality": analyze_transcript_quality(transcript),
         }
 
-    # Step 2: yt-dlp (balanced/full)
-    print("DEBUG: Trying Method 2 (yt-dlp)...")
-    transcript = fetch_transcript_ytdlp(video_url)
-    if transcript:
-        return {
-            "method": "yt-dlp",
-            "transcript": transcript,
-            "quality": analyze_transcript_quality(transcript),
-        }
+    # Step 2: yt-dlp (balanced/full ONLY)
+    if VIDEO_MODE in ("balanced", "full"):
+        print("DEBUG: Trying Method 2 (yt-dlp)...")
+        transcript = fetch_transcript_ytdlp(video_url)
+        if transcript:
+            return {
+                "method": "yt-dlp",
+                "transcript": transcript,
+                "quality": analyze_transcript_quality(transcript),
+            }
 
-    # Step 3: Gemini
-    print("DEBUG: Trying Method 3 (Native Gemini)...")
-    gemini_file = analyze_with_gemini(video_url)
-    if gemini_file:
-        return {
-            "method": "gemini", 
-            "gemini_file": gemini_file,
-            "quality": {"available": True, "quality_notes": "Native Video Analysis"}
-        }
+    # Step 3: Gemini (full ONLY)
+    if VIDEO_MODE == "full":
+        print("DEBUG: Trying Method 3 (Native Gemini)...")
+        gemini_file = analyze_with_gemini(video_url)
+        if gemini_file:
+            return {
+                "method": "gemini", 
+                "gemini_file": gemini_file,
+                "quality": {"available": True, "quality_notes": "Native Video Analysis"}
+            }
 
     # Blocked
     return {
         "status": "blocked",
-        "error": "Transcript unavailable. Upload video or screenshots.",
+        "error": "Transcript unavailable (Cloud-Safe Mode Active). Upload video or screenshots.",
     }
