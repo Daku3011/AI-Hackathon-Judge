@@ -29,12 +29,9 @@ import uvicorn
 # Local imports
 from services.github_analyzer import analyze_repo
 from services.video_analyzer import (
-    get_video_transcript, 
-    extract_video_id, 
-    analyze_video_quality, 
-    download_video_audio, 
-    upload_to_gemini, 
-    fetch_transcript_with_ytdlp
+    analyze_video,
+    extract_video_id,
+    analyze_transcript_quality
 )
 from services.doc_analyzer import extract_text_from_pdf
 from services.judge_engine import evaluate_project, generate_roast
@@ -48,7 +45,7 @@ load_dotenv()
 # ==========================================
 
 # Read version from VERSION file
-VERSION = "1.1.3"
+VERSION = "2.0.0"
 try:
     version_path = os.path.join(os.path.dirname(__file__), "VERSION")
     with open(version_path, "r") as f:
@@ -185,62 +182,33 @@ async def analyze_project(
         # Case A: User manually pasted transcript (Highest Priority / Most Reliable)
         print("INFO: Using manual transcript provided by user.")
         transcript = manual_transcript
-        video_metadata = analyze_video_quality(transcript)
+        video_metadata = analyze_transcript_quality(transcript)
         video_metadata["available"] = True
         video_metadata["quality_notes"] = "Manually provided transcript."
         
     elif video_url:
-        # Case B: Fetch from YouTube
-        video_id = extract_video_id(video_url)
-        if video_id:
-            print(f"INFO: Extracted video ID: {video_id}")
-            
-            # B1. Try Standard API (Fast)
-            transcript = get_video_transcript(video_id)
-            video_metadata = analyze_video_quality(transcript)
-            print(f"DEBUG: Initial Video metadata: {video_metadata}")
-            
-            # B2. Fallback: yt-dlp Text Discovery (Fast)
-            if not video_metadata.get("available", False):
-                print("WARN: Standard transcript failed. Trying yt-dlp text fetch (Fast)...")
-                ytdlp_transcript = fetch_transcript_with_ytdlp(video_url)
-                
-                if ytdlp_transcript:
-                    print("INFO: yt-dlp text fetch successful.")
-                    transcript = ytdlp_transcript
-                    # Re-analyze with new text
-                    video_metadata = analyze_video_quality(transcript)
-                    video_metadata["available"] = True
-                    video_metadata["quality_notes"] = "Recovered via yt-dlp (Fast Text Fetch)"
-            
-            # B3. Deep Fallback: Native Video Analysis (Slow but Powerful)
-            if not video_metadata.get("available", False):
-                print("WARN: Text-only methods failed. Switch to Native Video Analysis (Download -> Gemini)...")
-                
-                video_file_path = download_video_audio(video_url)
-                
-                if video_file_path:
-                    # Upload to Gemini for multimodal analysis
-                    gemini_file_obj = upload_to_gemini(video_file_path)
-                    
-                    if gemini_file_obj:
-                        video_metadata["available"] = True
-                        video_metadata["quality_notes"] = "Analyzed natively via Gemini (Multimodal)"
-                        transcript = "[Video analyzed natively by Gemini. Original transcript unavailable.]"
-                        print("INFO: Native Video Analysis setup complete.")
-                        
-                    # Cleanup local temp file
-                    try:
-                        if os.path.exists(video_file_path):
-                            os.remove(video_file_path)
-                    except Exception as e:
-                        print(f"WARN: Cleanup warning: {e}")
-                else:
-                    print("ERROR: Video download failed.")
+        # Case B: Orchestrated Video Analysis
+        from services.video_analyzer import analyze_video
+        
+        print(f"INFO: Starting Video Analysis for {video_url}")
+        video_result = analyze_video(video_url)
+        
+        if video_result.get("error") or video_result.get("status") == "blocked":
+            print(f"WARN: Video Analysis Failed: {video_result.get('error')}")
+            transcript = f"[Analysis Failed: {video_result.get('error')}]"
+            video_metadata = {"available": False, "quality_notes": "Analysis Blocked/Failed"}
+        
+        elif video_result.get("method") == "gemini":
+            print("INFO: Native Gemini Video Analysis Successful")
+            gemini_file_obj = video_result.get("gemini_file")
+            video_metadata = video_result.get("quality", {})
+            transcript = "[Video analyzed natively by Gemini. Original transcript unavailable.]"
             
         else:
-            transcript = "[Invalid YouTube URL: Could not extract video ID.]"
-            video_metadata = {"available": False, "quality_notes": "Invalid URL"}
+            # Text-based success (api or yt-dlp)
+            print(f"INFO: Transcript fetched via {video_result.get('method')}")
+            transcript = video_result.get("transcript", "")
+            video_metadata = video_result.get("quality", {})
 
     # ---------------------------------------------------------
     # 3. Analyze Documents
