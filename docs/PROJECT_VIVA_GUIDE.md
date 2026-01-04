@@ -6,7 +6,7 @@ This document explains **exactly** how the AI Project Judge works, why specific 
 
 ## 🏗️ 1. Architecture & Feature Deep Dive
 
-The project is built on a **FastAPI** backend (Python) and a **React** frontend. It uses a "Retrieval Augmented Generation" (RAG) style approach where we fetch data from various sources (GitHub, YouTube, Docs), feed it into a large context window, and ask an LLM (Gemini 1.5 Flash) to act as a specific persona.
+The project is built on a **FastAPI** backend (Python) and a **React** frontend. It uses a "Retrieval Augmented Generation" (RAG) style approach where we fetch data from various sources (GitHub, YouTube, Docs), feed it into a large context window, and ask an LLM (Gemini 2.5 Flash) to act as a specific persona.
 
 ### 🔍 Feature A: GitHub Repository Analysis
 **How it works:**
@@ -59,8 +59,8 @@ Video analysis is complex because YouTube aggressively blocks bots. We implement
 
 ## 💡 2. "Why Did You Use..." (Design Decisions)
 
-**Q: Why Gemini 1.5 Flash? Why not GPT-4?**
--   **Context Window:** Gemini 1.5 Flash has a **1 Million Token** context window. We can dump entire codebases and long transcripts into it without "truncating" data. GPT-4 is often limited or expensive for this volume.
+**Q: Why Gemini 2.5 Flash? Why not GPT-4?**
+-   **Context Window:** Gemini 2.5 Flash has a **1 Million Token** context window. We can dump entire codebases and long transcripts into it without "truncating" data. GPT-4 is often limited or expensive for this volume.
 -   **Native Multimodal:** Gemini can "watch" videos and "look" at images natively. GPT-4 usually requires frame-by-frame sampling which is complex to build.
 -   **Speed/Cost:** "Flash" is optimized for low-latency code tasks.
 

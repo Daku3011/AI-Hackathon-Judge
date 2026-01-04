@@ -273,9 +273,9 @@ async def _evaluate_with_gemini(api_key, prompt, gemini_file_obj=None):
             print("INFO: Using multimodal input (video file) for Gemini...")
             contents = [gemini_file_obj, prompt]
 
-        # Fixed Model Name: gemini-2.0-flash (Stable for 2026)
+        # Fixed Model Name: gemini-2.5-flash (Stable for 2025)
         response = await client.aio.models.generate_content(
-            model='gemini-2.0-flash',
+            model='gemini-2.5-flash',   
             contents=contents,
             config=types.GenerateContentConfig(
                 response_mime_type="application/json"
@@ -296,9 +296,10 @@ async def generate_roast(input_text: str):
     
     client = genai.Client(api_key=api_key)
     try:
+        # User requested 2.5-flash explicitly
         prompt_text = f"The user provided this garbage: \"{input_text}\"\nRoast them for being incompetent. Be brief (2 sentences) but brutal."
         response = await client.aio.models.generate_content(
-            model='gemini-2.0-flash',
+            model='gemini-2.5-flash',
             contents=prompt_text
         )
         return response.text

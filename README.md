@@ -43,7 +43,7 @@ Evaluate your hackathon project locally before the real judges do. Point the app
 
 - **Frontend**: React + Vite + Tailwind CSS v4
 - **Backend**: FastAPI (Python)
-- **AI**: Google Gemini Flash (`models/gemini-2.0-flash` via `google-genai`)
+- **AI**: Google Gemini Flash (`models/gemini-2.5-flash` via `google-genai`)
 - **Analysis**: PyGithub, youtube-transcript-api, yt-dlp, speech-to-text
 - **Packaging/Deploy**: Docker + Docker Compose; PyInstaller for native builds
 
