@@ -86,19 +86,20 @@ def read_root():
 async def analyze_project(
     github_url: Optional[str] = Form(None),
     video_url: Optional[str] = Form(None),
+    manual_transcript: Optional[str] = Form(None),
     persona: str = Form("standard"),
     ppt_file: Optional[UploadFile] = File(None),
     doc_file: Optional[UploadFile] = File(None)
 ):
-    # Validate Inputs: Require at least GitHub URL or PPT
-    if not github_url and not ppt_file:
+    # Validate Inputs: Require at least GitHub URL or PPT or Manual Transcript
+    if not github_url and not ppt_file and not manual_transcript and not video_url:
          return {
              "scores": { "innovation": 0, "quality": 0, "uiux": 0, "impact": 0 },
-             "feedback": "You must provide at least a GitHub Repository URL or upload a Presentation.",
-             "whyWontWin": "Because you submitted nothing."
+             "feedback": "You must provide a GitHub URL, a Presentation, or a Video/Transcript.",
+             "whyWontWin": "Because you submitted literally nothing."
          }
 
-    # Validate File Type
+    # ... (File type validation remains) ...
     if ppt_file:
         filename = ppt_file.filename.lower()
         if not (filename.endswith('.ppt') or filename.endswith('.pptx') or filename.endswith('.pdf')):
@@ -115,20 +116,28 @@ async def analyze_project(
         
         # Check for invalid repo
         if repo_data.get("files_count", 0) == 0:
-            # Generate Roast
+             # Generate Roast
             roast_msg = await generate_roast(github_url)
             return {
                  "scores": { "innovation": 0, "quality": 0, "uiux": 0, "impact": 0 },
                  "feedback": roast_msg,
                  "whyWontWin": "Because you didn't even submit a real project."
             }
-    # else repo_data stays as default
 
-    # 2. Analyze Video
+    # 2. Analyze Video / Transcript
     transcript = ""
     video_metadata = {}
-    if video_url:
-        # Extract video ID from URL
+    
+    if manual_transcript and len(manual_transcript.strip()) > 50:
+        # Use provided manual transcript
+        print("Using manual transcript provided by user.")
+        transcript = manual_transcript
+        video_metadata = analyze_video_quality(transcript)
+        video_metadata["available"] = True
+        video_metadata["quality_notes"] = "Manually provided transcript."
+        
+    elif video_url:
+        # Fallback to fetching from YouTube
         video_id = extract_video_id(video_url)
         if video_id:
             print(f"Extracted video ID: {video_id}")

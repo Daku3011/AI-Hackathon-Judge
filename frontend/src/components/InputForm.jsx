@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 const InputForm = ({ onSubmit, isLoading }) => {
     const [githubUrl, setGithubUrl] = useState('');
     const [videoUrl, setVideoUrl] = useState('');
+    const [manualTranscript, setManualTranscript] = useState('');
     const [persona, setPersona] = useState('standard');
 
     const [pptFile, setPptFile] = useState(null);
@@ -12,6 +13,7 @@ const InputForm = ({ onSubmit, isLoading }) => {
         const formData = new FormData();
         formData.append('github_url', githubUrl);
         formData.append('video_url', videoUrl);
+        formData.append('manual_transcript', manualTranscript);
         formData.append('persona', persona);
         if (pptFile) {
             formData.append('ppt_file', pptFile);
@@ -72,6 +74,22 @@ const InputForm = ({ onSubmit, isLoading }) => {
                                 onChange={(e) => setVideoUrl(e.target.value)}
                             />
                             <div className="absolute left-4 top-1/2 -translate-y-1/2 text-xl opacity-50">🎬</div>
+                        </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="block text-sm font-semibold text-slate-700 uppercase tracking-wide">
+                            Manual Transcript <span className="text-slate-400 font-normal normal-case">(Optional - fallback)</span>
+                        </label>
+                        <div className="relative">
+                            <textarea
+                                className="w-full p-4 pl-12 rounded-xl bg-slate-50 border border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none text-slate-800 placeholder-slate-400 font-medium"
+                                placeholder="Paste transcript here if YouTube fetch fails..."
+                                value={manualTranscript}
+                                onChange={(e) => setManualTranscript(e.target.value)}
+                                rows="3"
+                            />
+                            <div className="absolute left-4 top-6 text-xl opacity-50">📝</div>
                         </div>
                     </div>
 
