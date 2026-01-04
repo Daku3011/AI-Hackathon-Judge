@@ -5,20 +5,23 @@ import asyncio
 import json
 import statistics
 
-async def evaluate_project(repo_data: str, transcript: str, doc_text: str, ppt_text: str = "", persona: str = "standard"):
+async def evaluate_project(repo_data: str, transcript: str, doc_text: str, ppt_text: str = "", persona: str = "standard", video_metadata: dict = None):
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
         return {"error": "Missing GEMINI_API_KEY"}
     
     genai.configure(api_key=api_key)
     
+    if video_metadata is None:
+        video_metadata = {}
+    
     if persona == "consensus":
-        return await run_consensus_panel(repo_data, transcript, doc_text, ppt_text)
+        return await run_consensus_panel(repo_data, transcript, doc_text, ppt_text, video_metadata)
 
     # Single Persona Execution
-    return await _evaluate_single_persona(api_key, repo_data, transcript, doc_text, ppt_text, persona)
+    return await _evaluate_single_persona(api_key, repo_data, transcript, doc_text, ppt_text, persona, video_metadata)
 
-async def run_consensus_panel(repo_data, transcript, doc_text, ppt_text):
+async def run_consensus_panel(repo_data, transcript, doc_text, ppt_text, video_metadata):
     """
     Runs multiple judge personas in parallel and aggregates their scores.
     """
@@ -28,7 +31,7 @@ async def run_consensus_panel(repo_data, transcript, doc_text, ppt_text):
     
     # Run all judges in parallel
     tasks = [
-        _evaluate_single_persona(os.getenv("GEMINI_API_KEY"), repo_data, transcript, doc_text, ppt_text, role)
+        _evaluate_single_persona(os.getenv("GEMINI_API_KEY"), repo_data, transcript, doc_text, ppt_text, role, video_metadata)
         for role in judges
     ]
     
@@ -117,7 +120,7 @@ async def run_consensus_panel(repo_data, transcript, doc_text, ppt_text):
     return json.dumps(aggregated)
 
 
-async def _evaluate_single_persona(gemini_api_key, repo_data, transcript, doc_text, ppt_text, persona):
+async def _evaluate_single_persona(gemini_api_key, repo_data, transcript, doc_text, ppt_text, persona, video_metadata=None):
     # Define Persona Prompts
     persona_prompts = {
         "standard": "You are a Fair & Experienced Hackathon Judge. Evaluate objectively.",
@@ -131,6 +134,22 @@ async def _evaluate_single_persona(gemini_api_key, repo_data, transcript, doc_te
     
     role_description = persona_prompts.get(persona, persona_prompts["standard"])
     judge_name = persona.upper() if persona != "standard" else "Judge"
+    
+    if video_metadata is None:
+        video_metadata = {}
+    
+    # Build video context for better analysis
+    video_context = ""
+    if video_metadata.get("available"):
+        video_context = f"""
+VIDEO METRICS:
+- Word Count: {video_metadata.get('word_count', 0)}
+- Estimated Duration: {video_metadata.get('estimated_duration_minutes', 0)} minutes
+- Filler Words: {video_metadata.get('filler_word_count', 0)} ({video_metadata.get('filler_percentage', 0)}%)
+- Quality Notes: {video_metadata.get('quality_notes', 'N/A')}
+"""
+    else:
+        video_context = f"VIDEO METRICS: Not available - {video_metadata.get('quality_notes', 'No video provided')}"
 
     prompt = f"""
     ROLE: {role_description}
@@ -140,8 +159,16 @@ async def _evaluate_single_persona(gemini_api_key, repo_data, transcript, doc_te
     INPUTS:
     CODE SUMMARY: {repo_data[:5000]}
     VIDEO TRANSCRIPT: {transcript[:5000]}
+    {video_context}
     DOCS: {doc_text[:3000]}
     PPT SLIDES: {ppt_text[:3000]}
+    
+    IMPORTANT: For video_analysis, use the VIDEO METRICS above to inform your scoring:
+    - clarity_score: Based on filler word percentage (low % = high score)
+    - pacing_score: Based on words per minute and duration (too fast or slow = lower score)
+    - confidence_score: Infer from language patterns in transcript
+    - filler_words: "low" if <3%, "medium" if 3-5%, "high" if >5%
+    - comments: Provide specific feedback on presentation quality
     
     OUTPUT SCHEMA (JSON ONLY):
     {{
@@ -169,7 +196,7 @@ async def _evaluate_single_persona(gemini_api_key, repo_data, transcript, doc_te
             "pacing_score": <1-10>,
             "confidence_score": <1-10>,
             "filler_words": "low/medium/high",
-            "comments": "Analysis of speech and presentation quality"
+            "comments": "Analysis of speech and presentation quality based on the metrics"
         }}
     }}
     """

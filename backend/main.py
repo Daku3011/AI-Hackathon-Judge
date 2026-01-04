@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional
 from services.github_analyzer import analyze_repo
-from services.video_analyzer import get_video_transcript, extract_video_id
+from services.video_analyzer import get_video_transcript, extract_video_id, analyze_video_quality
 from services.doc_analyzer import extract_text_from_pdf
 from services.judge_engine import evaluate_project, generate_roast
 from services.ppt_analyzer import extract_text_from_ppt
@@ -126,13 +126,19 @@ async def analyze_project(
 
     # 2. Analyze Video
     transcript = ""
+    video_metadata = {}
     if video_url:
         # Extract video ID from URL
         video_id = extract_video_id(video_url)
         if video_id:
+            print(f"Extracted video ID: {video_id}")
             transcript = get_video_transcript(video_id)
+            # Analyze video quality metrics
+            video_metadata = analyze_video_quality(transcript)
+            print(f"Video metadata: {video_metadata}")
         else:
-             transcript = "Could not extract video ID from URL."
+            transcript = "[Invalid YouTube URL: Could not extract video ID.]"
+            video_metadata = {"available": False, "quality_notes": "Invalid URL"}
 
     # 3. Analyze Docs
     doc_text = "No documents provided."
@@ -188,7 +194,7 @@ async def analyze_project(
             "whyWontWin": "The UI is basic. Adding animations would help."
          }
 
-    analysis_result = await evaluate_project(repo_data.get("summary", ""), transcript, doc_text, ppt_text, persona)
+    analysis_result = await evaluate_project(repo_data.get("summary", ""), transcript, doc_text, ppt_text, persona, video_metadata)
     
     # Check if analysis_result is already a dict (error from judge_engine)
     if isinstance(analysis_result, dict):
