@@ -55,6 +55,8 @@ TRANSCRIPT_CACHE_DIR=/tmp/transcript_cache
 TRANSCRIPT_CACHE_EXPIRY=86400
 ```
 
+**Important Note**: The application uses `youtube-transcript-api` which should be version 0.6.2 or higher (specified in requirements.txt). If you need to use proxy settings with YouTube, ensure you're using the modern API version for thread safety. The legacy API (< 0.5.0) has thread-safety limitations when using proxies in multi-worker environments.
+
 ### Port Configuration
 ```
 PORT=8000

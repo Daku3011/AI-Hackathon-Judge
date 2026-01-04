@@ -211,9 +211,12 @@ def _fetch_transcript_with_timeout(video_id: str, proxies: Optional[dict], cooki
         print("Using Legacy YouTubeTranscriptApi (Update recommended)")
         print("WARNING: Legacy API may have thread-safety issues in multi-threaded environments")
         
-        # Note: Legacy API requires environment variables but this creates race conditions
-        # in multi-threaded environments. For production, upgrade to modern API version.
-        # This is kept for backward compatibility only.
+        # IMPORTANT NOTE: The legacy API requires setting environment variables for proxy
+        # support, which creates race conditions in multi-threaded environments (e.g., 
+        # uvicorn with multiple workers). For production deployments:
+        # 1. Upgrade to youtube-transcript-api >= 0.5.0 (recommended)
+        # 2. Use single-worker mode (workers=1) if using legacy API
+        # 3. Avoid proxy configuration if possible with legacy API
         
         # Set proxies via env vars temporarily (with mutex-like finally block)
         old_http = os.environ.get("HTTP_PROXY")
@@ -243,9 +246,17 @@ def _fetch_transcript_with_timeout(video_id: str, proxies: Optional[dict], cooki
             if isinstance(raw_transcript[0], dict):
                 text = " ".join([entry.get('text', '') for entry in raw_transcript])
             else:
-                # Handle object format
-                text = " ".join([getattr(entry, 'text', str(entry)) for entry in raw_transcript])
-            return text
+                # Handle object format - try to get text attribute
+                text_parts = []
+                for entry in raw_transcript:
+                    if hasattr(entry, 'text'):
+                        text_parts.append(entry.text)
+                    else:
+                        print(f"WARNING: Transcript entry missing 'text' attribute: {type(entry)}")
+                text = " ".join(text_parts)
+            
+            if text:
+                return text
     
     raise Exception("Failed to extract transcript text from API response")
 
@@ -286,8 +297,13 @@ def analyze_video_quality(transcript: str) -> dict:
     
     for word in filler_words:
         if ' ' in word:
-            # Multi-word filler phrase
-            filler_count += transcript_lower.count(word)
+            # Multi-word filler phrase - count occurrences in word list by joining
+            # Split into individual words and search for the sequence
+            phrase_words = word.split()
+            phrase_len = len(phrase_words)
+            for i in range(len(words_list) - phrase_len + 1):
+                if words_list[i:i+phrase_len] == phrase_words:
+                    filler_count += 1
         else:
             # Single word - count exact matches
             filler_count += words_list.count(word)
