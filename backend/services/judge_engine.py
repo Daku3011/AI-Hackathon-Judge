@@ -273,9 +273,9 @@ async def _evaluate_with_gemini(api_key, prompt, gemini_file_obj=None):
             print("INFO: Using multimodal input (video file) for Gemini...")
             contents = [gemini_file_obj, prompt]
 
-        # Fixed Model Name: gemini-1.5-flash
+        # Fixed Model Name: gemini-2.5-flash
         response = await client.aio.models.generate_content(
-            model='gemini-1.5-flash',
+            model='gemini-2.5-flash',
             contents=contents,
             config=types.GenerateContentConfig(
                 response_mime_type="application/json"
