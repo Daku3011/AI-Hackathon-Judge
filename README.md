@@ -83,13 +83,37 @@ npm run dev
 - `GEMINI_API_KEY` (required): Google Gemini 2.5 Flash access.
 - `GITHUB_TOKEN` (optional but recommended): Better GitHub API rate limits.
 - Optional video transcription keys if you swap providers (see backend/service configs).
+- **Video Analysis Options**:
+  - `TRANSCRIPT_CACHE_DIR`: Directory for caching video transcripts (default: `/tmp/transcript_cache`)
+  - `TRANSCRIPT_CACHE_EXPIRY`: Cache expiry time in seconds (default: 86400 = 24 hours)
+  - `YOUTUBE_PROXY`: Optional proxy server for YouTube API calls
+  - `YOUTUBE_COOKIES_FILE`: Optional cookies file for YouTube authentication
+
+## 🎬 Video Analysis Features
+
+The application includes robust video analysis capabilities with the following improvements:
+
+- **Smart Caching**: Transcripts are cached to reduce API calls and improve response times
+- **Retry Logic**: Automatic retry with exponential backoff for failed requests
+- **Quality Metrics**: Automated analysis of presentation quality including:
+  - Speaking pace and duration
+  - Filler word detection (um, uh, like, etc.)
+  - Clarity and confidence scoring
+- **Enhanced Error Handling**: Graceful handling of unavailable transcripts and network issues
+- **Multiple URL Formats**: Supports standard, short (youtu.be), and embed YouTube URLs
+
+See [Video Analysis Improvements](docs/VIDEO_ANALYSIS_IMPROVEMENTS.md) for detailed documentation.
 
 ## 🧪 Testing
 
 Backend unit tests (from repo root):
 ```bash
-cd backend
-pytest
+python -m unittest discover tests
+```
+
+Video analysis integration test:
+```bash
+python tests/integration_test_video.py
 ```
 
 Frontend linting:

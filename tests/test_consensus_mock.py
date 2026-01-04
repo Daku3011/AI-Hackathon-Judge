@@ -39,7 +39,7 @@ class TestConsensus(unittest.TestCase):
         mock_model.generate_content_async = mock_generate
         
         # Run the consensus panel
-        result_json = asyncio.run(run_consensus_panel("repo", "transcript", "docs", "ppt"))
+        result_json = asyncio.run(run_consensus_panel("repo", "transcript", "docs", "ppt", {}))
         result = json.loads(result_json)
         
         print("Result:", result)
