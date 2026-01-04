@@ -8,3 +8,4 @@ python-multipart
 python-dotenv
 python-pptx
 anthropic
+yt-dlp

@@ -44,7 +44,15 @@ This document describes the improvements made to the video analysis features to 
   - Embed URLs (`youtube.com/embed/...`)
   - URLs with additional parameters
 
-### 6. **Better AI Prompts**
+### 7. **Robust Fallback Strategy**
+- **Feature**: Manual Transcript Override
+- **Benefits**: Completely bypasses YouTube API blocking/errors by allowing user to provide text.
+- **Workflow**:
+  1. System attempts to fetch transcript via API (using Proxy if configured).
+  2. If failed, user can paste transcript text into the "Manual Transcript" field.
+  3. System uses pasted text for quality analysis and judging.
+
+### 8. **Better AI Prompts**
 - **Feature**: Enhanced prompts for AI model with detailed video metrics
 - **Includes**:
   - Speaking metrics (clarity, pacing, confidence)

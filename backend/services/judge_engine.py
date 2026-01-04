@@ -1,38 +1,64 @@
-from google import genai
-from google.genai import types
-import anthropic
+"""
+Judge Engine Service
+--------------------
+Orchestrates the AI evaluation process.
+Supports:
+1. Multi-Persona Consensus (Consensus Panel)
+2. Single Persona Evaluation
+3. Multimodal Analysis (Video + Text + Code)
+
+Integrates with Google Gemini (Primary) and potentially Anthropic Claude (Secondary/Disabled).
+
+Author: Dwarkesh Ramani & Team
+"""
+
 import os
 import asyncio
 import json
 import statistics
 
-async def evaluate_project(repo_data: str, transcript: str, doc_text: str, ppt_text: str = "", persona: str = "standard", video_metadata: dict = None):
+# Third-party imports
+from google import genai
+from google.genai import types
+import anthropic
+
+# ==========================================
+# Main Entry Point
+# ==========================================
+
+async def evaluate_project(repo_data: str, transcript: str, doc_text: str, ppt_text: str = "", persona: str = "standard", video_metadata: dict = None, gemini_file_obj=None):
+    """
+    Main entry point for project evaluation.
+    Routes to single or multi-judge panel based on configured persona.
+    """
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
         return {"error": "Missing GEMINI_API_KEY"}
-    
-    client = genai.Client(api_key=api_key)
     
     if video_metadata is None:
         video_metadata = {}
     
     if persona == "consensus":
-        return await run_consensus_panel(repo_data, transcript, doc_text, ppt_text, video_metadata)
+        return await run_consensus_panel(repo_data, transcript, doc_text, ppt_text, video_metadata, gemini_file_obj)
 
     # Single Persona Execution
-    return await _evaluate_single_persona(api_key, repo_data, transcript, doc_text, ppt_text, persona, video_metadata)
+    return await _evaluate_single_persona(api_key, repo_data, transcript, doc_text, ppt_text, persona, video_metadata, gemini_file_obj)
 
-async def run_consensus_panel(repo_data, transcript, doc_text, ppt_text, video_metadata):
+# ==========================================
+# Consensus Panel Logic
+# ==========================================
+
+async def run_consensus_panel(repo_data, transcript, doc_text, ppt_text, video_metadata, gemini_file_obj=None):
     """
     Runs multiple judge personas in parallel and aggregates their scores.
     """
     judges = ["vc", "cto", "product", "uiux", "professor"]
     
-    print(f"DEBUG: Starting Consensus Panel with judges: {judges}")
+    print(f"INFO: Starting Consensus Panel with judges: {judges}")
     
     # Run all judges in parallel
     tasks = [
-        _evaluate_single_persona(os.getenv("GEMINI_API_KEY"), repo_data, transcript, doc_text, ppt_text, role, video_metadata)
+        _evaluate_single_persona(os.getenv("GEMINI_API_KEY"), repo_data, transcript, doc_text, ppt_text, role, video_metadata, gemini_file_obj)
         for role in judges
     ]
     
@@ -120,8 +146,11 @@ async def run_consensus_panel(repo_data, transcript, doc_text, ppt_text, video_m
     
     return json.dumps(aggregated)
 
+# ==========================================
+# Single Persona Logic
+# ==========================================
 
-async def _evaluate_single_persona(gemini_api_key, repo_data, transcript, doc_text, ppt_text, persona, video_metadata=None):
+async def _evaluate_single_persona(gemini_api_key, repo_data, transcript, doc_text, ppt_text, persona, video_metadata=None, gemini_file_obj=None):
     # Define Persona Prompts
     persona_prompts = {
         "standard": "You are a Fair & Experienced Hackathon Judge. Evaluate objectively.",
@@ -214,7 +243,7 @@ VIDEO METRICS:
     #     print("DEBUG: No ANTHROPIC_API_KEY found. Using Gemini.")
 
     # 2. Fallback to Gemini
-    return await _evaluate_with_gemini(gemini_api_key, prompt)
+    return await _evaluate_with_gemini(gemini_api_key, prompt, gemini_file_obj)
 
 async def _evaluate_with_claude(api_key, prompt):
     client = anthropic.AsyncAnthropic(api_key=api_key)
@@ -229,19 +258,25 @@ async def _evaluate_with_claude(api_key, prompt):
     if "```json" in content:
         content = content.split("```json")[1].split("```")[0]
     elif "```" in content:
-        content = content.split("```")[1].split("```")[0]
+        content = content.split("```")[1]
     return content.strip()
 
-async def _evaluate_with_gemini(api_key, prompt):
+async def _evaluate_with_gemini(api_key, prompt, gemini_file_obj=None):
     if not api_key:
         return json.dumps({"error": "Missing GEMINI_API_KEY for fallback"})
         
     client = genai.Client(api_key=api_key)
     try:
+        # Prepare contents (multimodal if file provided)
+        contents = [prompt]
+        if gemini_file_obj:
+            print("INFO: Using multimodal input (video file) for Gemini...")
+            contents = [gemini_file_obj, prompt]
+
         # Fixed Model Name: gemini-1.5-flash
         response = await client.aio.models.generate_content(
-            model='gemini-2.5-flash',
-            contents=prompt,
+            model='gemini-1.5-flash',
+            contents=contents,
             config=types.GenerateContentConfig(
                 response_mime_type="application/json"
             )
@@ -252,6 +287,9 @@ async def _evaluate_with_gemini(api_key, prompt):
         return json.dumps({"error": f"Both AI models failed. Gemini Error: {str(e)}"})
 
 async def generate_roast(input_text: str):
+    """
+    Generates a quick, brutal roast for invalid submissions.
+    """
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
         return "I can't even roast you properly because the API key is missing. Pathetic."

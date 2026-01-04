@@ -15,6 +15,12 @@ Evaluate your hackathon project locally before the real judges do. Point the app
 - **Winning likelihood**: A data-backed prediction of your odds, plus a blunt reason if you are not ready.
 - **Video & speech analytics**: Delivery metrics from your demo (pacing, confidence, clarity).
 - **Mentor roadmap**: Actionable next steps to move from prototype to production.
+- **Robust Fallbacks**: 3-Layer Video Analysis (Standard API -> yt-dlp Fast Fetch -> Native Gemini Multimodal).
+
+## 📚 Documentation & Viva Guide
+
+- **[Viva / Interview Q&A Guide](docs/PROJECT_VIVA_GUIDE.md)** - **START HERE** for a deep dive into the project architecture and answers to common viva questions.
+- [Video Analysis Technical Detail](docs/VIDEO_ANALYSIS_IMPROVEMENTS.md) - How we bypass YouTube restrictions.
 
 ## 🎭 Judge Personas
 
@@ -30,14 +36,15 @@ Evaluate your hackathon project locally before the real judges do. Point the app
 
 - GitHub repository (code quality, docs, dependency risk)
 - Pitch deck / PPTX or PDF
-- Demo video (with speech-to-text for delivery insights)
+- Demo video (YouTube URL)
+- **Manual Transcript** (Paste text directly if YouTube blocking occurs)
 
 ## 🛠️ Tech Stack
 
 - **Frontend**: React + Vite + Tailwind CSS v4
 - **Backend**: FastAPI (Python)
-- **AI**: Google Gemini 2.5 Flash (`models/gemini-2.5-flash` via `google-generativeai`)
-- **Analysis**: PyGithub, speech-to-text for video transcripts
+- **AI**: Google Gemini Flash (`models/gemini-2.5-flash` via `google-genai`)
+- **Analysis**: PyGithub, youtube-transcript-api, yt-dlp, speech-to-text
 - **Packaging/Deploy**: Docker + Docker Compose; PyInstaller for native builds
 
 ## 🚀 Quickstart
@@ -46,14 +53,14 @@ Evaluate your hackathon project locally before the real judges do. Point the app
 1) Install Docker and Docker Compose.
 2) Create `.env` in the project root:
    ```bash
-   GEMINI_API_KEY=your_key_here    # access to models/gemini-2.5-flash required
-   GITHUB_TOKEN=your_token_here    # improves repo analysis rate limits
+   GEMINI_API_KEY=your_key_here    # required
+   GITHUB_TOKEN=your_token_here    # recommended for repo analysis
    ```
 3) Start everything:
    ```bash
    docker-compose up --build
    ```
-4) Open http://localhost:8000 or https://0.0.0.0:8000
+4) Open http://localhost:8000
 
 ### Option B: Manual dev setup
 
@@ -80,29 +87,21 @@ npm run dev
 
 ## 🔑 Environment variables
 
-- `GEMINI_API_KEY` (required): Google Gemini 2.5 Flash access.
-- `GITHUB_TOKEN` (optional but recommended): Better GitHub API rate limits.
-- Optional video transcription keys if you swap providers (see backend/service configs).
+- `GEMINI_API_KEY` (required): Google Gemini access.
+- `GITHUB_TOKEN` (optional): Improvements for GitHub rate limits.
 - **Video Analysis Options**:
-  - `TRANSCRIPT_CACHE_DIR`: Directory for caching video transcripts (default: `/tmp/transcript_cache`)
-  - `TRANSCRIPT_CACHE_EXPIRY`: Cache expiry time in seconds (default: 86400 = 24 hours)
-  - `YOUTUBE_PROXY`: Optional proxy server for YouTube API calls
-  - `YOUTUBE_COOKIES_FILE`: Optional cookies file for YouTube authentication
+  - `YOUTUBE_PROXY`: (Recommended) Proxy URL (e.g., `http://user:pass@host:port`) to bypass YouTube IP blocks.
+  - `TRANSCRIPT_CACHE_DIR`: Cache directory (default: `/tmp/transcript_cache`).
+  - `YOUTUBE_COOKIES_FILE`: (Optional) Path to cookies.txt (less reliable than proxy).
 
 ## 🎬 Video Analysis Features
 
-The application includes robust video analysis capabilities with the following improvements:
+The application includes robust video analysis capabilities:
 
-- **Smart Caching**: Transcripts are cached to reduce API calls and improve response times
-- **Retry Logic**: Automatic retry with exponential backoff for failed requests
-- **Quality Metrics**: Automated analysis of presentation quality including:
-  - Speaking pace and duration
-  - Filler word detection (um, uh, like, etc.)
-  - Clarity and confidence scoring
-- **Enhanced Error Handling**: Graceful handling of unavailable transcripts and network issues
-- **Multiple URL Formats**: Supports standard, short (youtu.be), and embed YouTube URLs
-
-See [Video Analysis Improvements](docs/VIDEO_ANALYSIS_IMPROVEMENTS.md) for detailed documentation.
+- **Smart Caching**: Transcripts are cached to reduce API calls.
+- **Fast Text Fallback**: Uses `yt-dlp` to fetch subtitles even if the official API is blocked.
+- **Native Video Vision**: If text fails, we download the video and let Gemini "watch" it.
+- **Quality Metrics**: Automated analysis of presentation quality (pacing, fillers, etc.).
 
 ## 🧪 Testing
 
