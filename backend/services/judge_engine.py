@@ -1,4 +1,5 @@
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 import anthropic
 import os
 import asyncio
@@ -10,7 +11,7 @@ async def evaluate_project(repo_data: str, transcript: str, doc_text: str, ppt_t
     if not api_key:
         return {"error": "Missing GEMINI_API_KEY"}
     
-    genai.configure(api_key=api_key)
+    client = genai.Client(api_key=api_key)
     
     if video_metadata is None:
         video_metadata = {}
@@ -235,13 +236,15 @@ async def _evaluate_with_gemini(api_key, prompt):
     if not api_key:
         return json.dumps({"error": "Missing GEMINI_API_KEY for fallback"})
         
-    genai.configure(api_key=api_key)
+    client = genai.Client(api_key=api_key)
     try:
         # Fixed Model Name: gemini-1.5-flash
-        model = genai.GenerativeModel('models/gemini-2.5-flash')
-        response = await model.generate_content_async(
-            prompt,
-            generation_config={"response_mime_type": "application/json"}
+        response = await client.aio.models.generate_content(
+            model='gemini-2.5-flash',
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json"
+            )
         )
         return response.text
     except Exception as e:
@@ -253,14 +256,13 @@ async def generate_roast(input_text: str):
     if not api_key:
         return "I can't even roast you properly because the API key is missing. Pathetic."
     
-    genai.configure(api_key=api_key)
+    client = genai.Client(api_key=api_key)
     try:
-        model = genai.GenerativeModel('models/gemini-2.5-flash')
-        prompt = f"""
-        The user provided this garbage: "{input_text}"
-        Roast them for being incompetent. Be brief (2 sentences) but brutal.
-        """
-        response = await model.generate_content_async(prompt)
+        prompt_text = f"The user provided this garbage: \"{input_text}\"\nRoast them for being incompetent. Be brief (2 sentences) but brutal."
+        response = await client.aio.models.generate_content(
+            model='gemini-1.5-flash',
+            contents=prompt_text
+        )
         return response.text
     except Exception as e:
         return f"I tried to roast you but even that failed: {e}"

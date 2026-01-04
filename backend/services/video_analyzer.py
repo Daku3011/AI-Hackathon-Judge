@@ -241,14 +241,18 @@ def _fetch_transcript_with_timeout(video_id: str, proxies: Optional[dict], cooki
                     os.environ["HTTPS_PROXY"] = old_https
     
     # Handle response format
-    if raw_transcript and isinstance(raw_transcript, list):
-        if len(raw_transcript) > 0:
-            if isinstance(raw_transcript[0], dict):
-                text = " ".join([entry.get('text', '') for entry in raw_transcript])
+    # Allow iterables like FetchedTranscript
+    if raw_transcript and (isinstance(raw_transcript, list) or hasattr(raw_transcript, '__iter__')):
+        # Convert to list to safely check length and first element
+        transcript_items = list(raw_transcript)
+        
+        if len(transcript_items) > 0:
+            if isinstance(transcript_items[0], dict):
+                text = " ".join([entry.get('text', '') for entry in transcript_items])
             else:
-                # Handle object format - try to get text attribute
+                # Handle object format (FetchedTranscriptSnippet)
                 text_parts = []
-                for entry in raw_transcript:
+                for entry in transcript_items:
                     if hasattr(entry, 'text'):
                         text_parts.append(entry.text)
                     else:

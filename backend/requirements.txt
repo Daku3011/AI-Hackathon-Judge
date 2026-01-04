@@ -1,7 +1,7 @@
 fastapi
 uvicorn
-google-generativeai
-youtube-transcript-api>=0.6.2
+google-genai
+youtube-transcript-api>=0.6.3
 pypdf
 PyGithub
 python-multipart
