@@ -4,12 +4,38 @@ import ScoreCard from './components/Scorecard';
 import FeedbackSection from './components/FeedbackSection';
 import LoadingScreen from './components/LoadingScreen';
 
+import { YoutubeTranscript } from 'youtube-transcript';
+
 function App() {
   const [appState, setAppState] = useState('input'); // input, analyzing, results
   const [results, setResults] = useState(null);
 
   const handleAnalyze = async (data) => {
     setAppState('analyzing');
+
+    // Browser-side Transcript Fetching (Bypass Render IP Block)
+    if (data instanceof FormData) {
+      const videoUrl = data.get('video_url');
+      const currentTranscript = data.get('manual_transcript');
+
+      if (videoUrl && (!currentTranscript || currentTranscript.trim() === '')) {
+        try {
+          console.log("Attempting to fetch transcript in browser...");
+          const transcriptItems = await YoutubeTranscript.fetchTranscript(videoUrl);
+          const fullTranscript = transcriptItems.map(t => t.text).join(' ');
+
+          if (fullTranscript) {
+            console.log("Transcript fetched successfully via browser!");
+            data.set('manual_transcript', fullTranscript);
+          }
+        } catch (error) {
+          console.warn("Browser transcript fetch failed (likely no captions or popup blocker):", error);
+          // alert(`Browser-side transcript fetch blocked by CORS (YouTube security).\n\nQUICK FIX (For Demo):\nInstall "Allow CORS" Chrome Extension and toggle it ON.\n\nOR\nManually paste the transcript in the text box below.`);
+          console.log("Browser fetch failed, falling back to Backend (Cookie Auth) analysis.");
+          // Fallback to backend (which might fail on Render, but worth a try or just error out)
+        }
+      }
+    }
 
     try {
       // Use relative path for production (same origin), localhost for local dev

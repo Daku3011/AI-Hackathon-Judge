@@ -103,6 +103,15 @@ The application includes robust video analysis capabilities:
 - **Native Video Vision**: If text fails, we download the video and let Gemini "watch" it.
 - **Quality Metrics**: Automated analysis of presentation quality (pacing, fillers, etc.).
 
+> [!WARNING]
+> **Cloud Deployment (Render/Heroku/AWS)**:
+> YouTube aggressively blocks datacenter IPs (like Render's). The video analysis might fail with "Sign in to confirm you’re not a bot".
+>
+> **Workarounds**:
+> 1. **Cookies (Recommended)**: Export your YouTube `cookies.txt` (using a browser extension) and place it in the `backend/` directory (or as a Secret File on Render). The app will automatically use it to authenticate.
+> 2. **Manual Paste**: If automated analysis fails, simply paste the transcript text into the "Manual Transcript" field on the submission form.
+> 3. **Run Locally**: The video analysis works best on your local machine using your home IP.
+
 ## 🧪 Testing
 
 Backend unit tests (from repo root):
