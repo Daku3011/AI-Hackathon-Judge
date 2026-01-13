@@ -9,3 +9,5 @@ python-dotenv
 python-pptx
 anthropic
 yt-dlp
+beautifulsoup4
+requests

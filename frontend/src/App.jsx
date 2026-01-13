@@ -74,6 +74,9 @@ function App() {
         security_issues: result.security_issues || [],
         languages: result.languages || "Unknown",
         files_count: result.files_count || 0,
+        estimated_loc: result.estimated_loc || 0,
+        site_analysis: result.site_analysis || null,
+        is_github: result.is_github ?? true,
         judge_name: result.judge_name || "AI Judge"
       });
       setAppState('results');
@@ -139,6 +142,9 @@ function App() {
                 securityIssues={results.security_issues}
                 languages={results.languages}
                 filesCount={results.files_count}
+                estimatedLoc={results.estimated_loc}
+                siteAnalysis={results.site_analysis}
+                isGithub={results.is_github}
                 judgeName={results.judge_name}
               />
             </div>

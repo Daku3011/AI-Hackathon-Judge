@@ -114,11 +114,18 @@ def analyze_repo(repo_url: str):
         except:
             languages_data = {repo.language: 100} if repo.language else {}
 
-        # 4. Construct Summary for LLM
+        # 4. Estimate LOC (Lines of Code)
+        # Rule of thumb: byte size / 40 (approximate average line length)
+        total_loc = 0
+        for lang, size in languages_data.items():
+            total_loc += size // 40
+
+        # 5. Construct Summary for LLM
         summary = f"Repository: {full_name}\n"
         summary += f"Description: {repo.description}\n"
         summary += f"Stars: {repo.stargazers_count}\n"
         summary += f"Primary Language: {repo.language}\n"
+        summary += f"Estimated Total LOC: {total_loc:,}\n"
         summary += f"Languages Detail: {languages_data}\n\n"
         
         summary += f"--- SECURITY REPORT ---\n"
@@ -141,13 +148,14 @@ def analyze_repo(repo_url: str):
         summary += f"--- README.md ---\n{readme_content[:3000]}\n"
         
         
-        print(f"DEBUG: Found {len(files_list)} files.")
+        print(f"DEBUG: Found {len(files_list)} files. Estimated LOC: {total_loc}")
         
         return {
             "summary": summary,
             "files_count": len(files_list),
             "languages": languages_data,
-            "security_issues": detected_issues
+            "security_issues": detected_issues,
+            "estimated_loc": total_loc
         }
 
     except Exception as e:

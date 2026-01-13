@@ -81,19 +81,65 @@ const getLanguageColor = (lang) => {
     return colors[lang] || '#CBD5E1'; // Default slate-300
 };
 
-const FeedbackSection = ({ feedback, whyWontWin, strengths = [], improvements = [], questions = [], pptAnalysis = {}, videoAnalysis = {}, winProbability = 0, roadmap = [], securityIssues = [], languages = "Unknown", filesCount = 0, judgeName = "AI Judge" }) => {
+const FeedbackSection = ({ 
+    feedback, 
+    whyWontWin, 
+    strengths = [], 
+    improvements = [], 
+    questions = [], 
+    pptAnalysis = {}, 
+    videoAnalysis = {}, 
+    winProbability = 0, 
+    roadmap = [], 
+    securityIssues = [], 
+    languages = "Unknown", 
+    filesCount = 0, 
+    estimatedLoc = 0,
+    siteAnalysis = null,
+    isGithub = true,
+    judgeName = "AI Judge" 
+}) => {
     return (
         <div className="space-y-6 h-full pb-10">
             {/* Project Overview Stats */}
             <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-                <LanguageBar languages={languages} />
+                <LanguageBar languages={isGithub ? languages : (siteAnalysis?.tech_stack || "Web Stack")} />
 
                 <div className="bg-white/60 backdrop-blur-md p-4 rounded-xl border border-white/80 shadow-sm">
-                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Codebase</div>
+                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                        {isGithub ? "Codebase" : "Site Size"}
+                    </div>
                     <div className="text-lg font-bold text-slate-700 flex items-center gap-2">
-                        <span className="text-emerald-500 text-xl">📁</span> {filesCount} Files
+                        {isGithub ? (
+                            <>
+                                <span className="text-emerald-500 text-xl">📁</span> {filesCount} Files
+                            </>
+                        ) : (
+                            <>
+                                <span className="text-blue-500 text-xl">📄</span> {siteAnalysis?.page_size_kb?.toFixed(1) || 0} KB
+                            </>
+                        )}
                     </div>
                 </div>
+
+                {isGithub && estimatedLoc > 0 && (
+                    <div className="bg-white/60 backdrop-blur-md p-4 rounded-xl border border-white/80 shadow-sm">
+                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Lines of Code</div>
+                        <div className="text-lg font-bold text-slate-700 flex items-center gap-2">
+                            <span className="text-orange-500 text-xl">📏</span> {estimatedLoc.toLocaleString()} LOC
+                        </div>
+                    </div>
+                )}
+
+                {!isGithub && siteAnalysis && (
+                    <div className="bg-white/60 backdrop-blur-md p-4 rounded-xl border border-white/80 shadow-sm">
+                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Routes</div>
+                        <div className="text-lg font-bold text-slate-700 flex items-center gap-2">
+                            <span className="text-purple-500 text-xl">🔗</span> {siteAnalysis.routes_count} Pinpoints
+                        </div>
+                    </div>
+                )}
+
                 <div className={`p-4 rounded-xl border backdrop-blur-md shadow-sm flex flex-col justify-center ${winProbability > 70 ? 'bg-emerald-50/80 border-emerald-100' : winProbability > 40 ? 'bg-amber-50/80 border-amber-100' : 'bg-red-50/80 border-red-100'}`}>
                     <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Win Probability™</div>
                     <div className={`text-lg font-black flex items-center gap-2 ${winProbability > 70 ? 'text-emerald-600' : winProbability > 40 ? 'text-amber-600' : 'text-red-600'}`}>

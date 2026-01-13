@@ -28,6 +28,7 @@ import uvicorn
 
 # Local imports
 from services.github_analyzer import analyze_repo
+from services.site_analyzer import analyze_site
 from services.video_analyzer import (
     analyze_video,
     extract_video_id,
@@ -156,20 +157,32 @@ async def analyze_project(
              }
 
     # ---------------------------------------------------------
-    # 1. Analyze Repository
+    # 1. Analyze Repository or Website
     # ---------------------------------------------------------
-    repo_data = {"summary": "No GitHub repository provided."}
+    repo_data = {"summary": "No project source provided."}
+    site_data = {}
+    is_github = False
+
     if github_url:
-        repo_data = analyze_repo(github_url)
-        
-        # Check for invalid repo (empty or non-existent)
-        if repo_data.get("files_count", 0) == 0:
-            roast_msg = await generate_roast(github_url)
-            return {
-                 "scores": { "innovation": 0, "quality": 0, "uiux": 0, "impact": 0 },
-                 "feedback": roast_msg,
-                 "whyWontWin": "Because you didn't even submit a real project."
-            }
+        github_url = github_url.strip()
+        if "github.com" in github_url.lower():
+            is_github = True
+            print(f"INFO: Analyzing GitHub Repository: {github_url}")
+            repo_data = analyze_repo(github_url)
+            
+            # Check for invalid repo (empty or non-existent)
+            if repo_data.get("files_count", 0) == 0:
+                roast_msg = await generate_roast(github_url)
+                return {
+                     "scores": { "innovation": 0, "quality": 0, "uiux": 0, "impact": 0 },
+                     "feedback": roast_msg,
+                     "whyWontWin": "Because you didn't even submit a real project."
+                }
+        else:
+            print(f"INFO: Analyzing Website: {github_url}")
+            site_data = analyze_site(github_url)
+            repo_data = {"summary": site_data.get("summary", "Failed to analyze site.")}
+            is_github = False
 
     # ---------------------------------------------------------
     # 2. Analyze Video / Transcript
@@ -296,6 +309,9 @@ async def analyze_project(
             "video_analysis": data.get("video_analysis", {}),
             "languages": repo_data.get("languages", "Unknown"),
             "files_count": repo_data.get("files_count", 0),
+            "estimated_loc": repo_data.get("estimated_loc", 0),
+            "site_analysis": site_data if site_data else None,
+            "is_github": is_github,
             "judge_name": data.get("judge_name", "AI Judge")
         }
     except Exception as e:
