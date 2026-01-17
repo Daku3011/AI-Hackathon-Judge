@@ -123,7 +123,18 @@ async def run_consensus_panel(repo_data, transcript, doc_text, ppt_text, video_m
         aggregated["areas_for_improvement"].extend(res.get("areas_for_improvement", []))
         aggregated["suggested_questions"].extend(res.get("suggested_questions", []))
         
-        feedbacks.append(f"[{res.get('judge_name', 'Judge')}] {res.get('summary_feedback', '')}")
+        # Calculate individual judge's average score
+        j_scores = [
+            safe_get_score(res, "innovation_score"), 
+            safe_get_score(res, "technical_score"),
+            safe_get_score(res, "relevance_score"),
+            safe_get_score(res, "ui_ux_score"),
+            safe_get_score(res, "impact_score"),
+            safe_get_score(res, "presentation_score")
+        ]
+        avg_score = round(sum(j_scores) / len(j_scores), 1) if j_scores else 0
+        
+        feedbacks.append(f"[{res.get('judge_name', 'Judge')} - {avg_score}/10] {res.get('summary_feedback', '')}")
         reasons_loss.append(res.get("why_it_wont_win", ""))
 
     # Finalize Averages

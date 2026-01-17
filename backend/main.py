@@ -3,12 +3,12 @@ AI Hackathon Judge - Backend API
 --------------------------------
 This is the main entry point for the FastAPI backend. It handles:
 - Project Analysis (GitHub, Video, Documents)
-- AI Evaluation (Gemini 1.5 Flash)
+- AI Evaluation (Gemini 2.5 Flash)
 - Frontend Asset Serving
 - Static File Management
 
 Author: Dwarkesh Ramani & Team
-Version: 1.1.3
+Version: 2.0.0
 """
 
 import sys
@@ -163,12 +163,15 @@ async def analyze_project(
     site_data = {}
     is_github = False
 
+    # ... imports
+    from fastapi.concurrency import run_in_threadpool
+
     if github_url:
         github_url = github_url.strip()
         if "github.com" in github_url.lower():
             is_github = True
             print(f"INFO: Analyzing GitHub Repository: {github_url}")
-            repo_data = analyze_repo(github_url)
+            repo_data = await run_in_threadpool(analyze_repo, github_url)
             
             # Check for invalid repo (empty or non-existent)
             if repo_data.get("files_count", 0) == 0:
@@ -180,7 +183,7 @@ async def analyze_project(
                 }
         else:
             print(f"INFO: Analyzing Website: {github_url}")
-            site_data = analyze_site(github_url)
+            site_data = await run_in_threadpool(analyze_site, github_url)
             repo_data = {"summary": site_data.get("summary", "Failed to analyze site.")}
             is_github = False
 
@@ -201,10 +204,10 @@ async def analyze_project(
         
     elif video_url:
         # Case B: Orchestrated Video Analysis
-        from services.video_analyzer import analyze_video
+        # Note: analyze_video is imported globally
         
         print(f"INFO: Starting Video Analysis for {video_url}")
-        video_result = analyze_video(video_url)
+        video_result = await run_in_threadpool(analyze_video, video_url)
         
         if video_result.get("error") or video_result.get("status") == "blocked":
             print(f"WARN: Video Analysis Failed: {video_result.get('error')}")
@@ -241,9 +244,9 @@ async def analyze_project(
             filename = ppt_file.filename.lower()
             
             if filename.endswith(".pdf"):
-                ppt_text = extract_text_from_pdf(content)
+                ppt_text = await run_in_threadpool(extract_text_from_pdf, content)
             else:
-                ppt_text = extract_text_from_ppt(content)
+                ppt_text = await run_in_threadpool(extract_text_from_ppt, content)
                 
         except Exception as e:
             ppt_text = f"Error reading presentation file: {e}"

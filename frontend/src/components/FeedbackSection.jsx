@@ -184,9 +184,13 @@ const FeedbackSection = ({
 
                 <div className="space-y-6 relative z-10">
                     {/* Split feedback by judge if it follows the [JUDGE] format */}
-                    {feedback.split(/\[(VC|CTO|PRODUCT|UIUX|PROFESSOR)\]/i).filter(Boolean).map((part, i, arr) => {
-                        if (['VC', 'CTO', 'PRODUCT', 'UIUX', 'PROFESSOR'].includes(part.toUpperCase())) {
-                            const judgeLabel = part.toUpperCase();
+                    {feedback.split(/\[((?:VC|CTO|PRODUCT|UIUX|PROFESSOR)(?:[^\]]*))\]/i).filter(Boolean).map((part, i, arr) => {
+                        // Regex to parse "VC - 8.5/10" or just "VC"
+                        const match = part.match(/^(VC|CTO|PRODUCT|UIUX|PROFESSOR)(?:\s*-\s*([\d\.]+)\/10)?$/i);
+                        
+                        if (match) {
+                            const judgeLabel = match[1].toUpperCase();
+                            const score = match[2]; // May be undefined
                             const judgeContent = arr[i + 1] || "";
 
                             const judgeStyles = {
@@ -199,9 +203,16 @@ const FeedbackSection = ({
 
                             return (
                                 <div key={i} className={`${judgeStyles.bg} ${judgeStyles.border} border p-5 rounded-xl transition-all hover:bg-white shadow-sm hover:shadow-md`}>
-                                    <div className="flex items-center gap-2 mb-3">
-                                        <span className="text-lg">{judgeStyles.icon}</span>
-                                        <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${judgeStyles.text}`}>{judgeLabel} Persona</span>
+                                    <div className="flex items-center justify-between mb-3">
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-lg">{judgeStyles.icon}</span>
+                                            <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${judgeStyles.text}`}>{judgeLabel} Persona</span>
+                                        </div>
+                                        {score && (
+                                            <div className={`px-2 py-1 rounded-md bg-white/50 border ${judgeStyles.border} text-xs font-bold ${judgeStyles.text}`}>
+                                                {score}/10
+                                            </div>
+                                        )}
                                     </div>
                                     <div className="prose prose-slate max-w-none prose-p:text-slate-600 prose-p:text-base prose-p:leading-relaxed">
                                         <ReactMarkdown>{judgeContent.trim()}</ReactMarkdown>
@@ -213,7 +224,7 @@ const FeedbackSection = ({
                     })}
 
                     {/* Fallback if no judge markers found */}
-                    {!feedback.match(/\[(VC|CTO|PRODUCT|UIUX|PROFESSOR)\]/i) && (
+                    {!feedback.match(/\[(VC|CTO|PRODUCT|UIUX|PROFESSOR)/i) && (
                         <div className="prose prose-slate max-w-none prose-p:text-slate-600 prose-p:text-lg prose-p:leading-relaxed">
                             <ReactMarkdown>{feedback}</ReactMarkdown>
                         </div>

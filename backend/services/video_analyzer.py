@@ -135,14 +135,17 @@ def fetch_transcript_api(video_id: str) -> Optional[str]:
         return None
 
 
+import shutil
+import uuid
+
 # ======================================================
 # Method 2: yt-dlp subtitles (ONE TRY ONLY)
 # ======================================================
 
 def fetch_transcript_ytdlp(video_url: str) -> Optional[str]:
+    tmp_path = Path(f"/tmp/ytdlp_subs_{uuid.uuid4()}")
     try:
-        tmp = Path("/tmp/ytdlp_subs")
-        tmp.mkdir(exist_ok=True)
+        tmp_path.mkdir(parents=True, exist_ok=True)
         
         cookies_path = get_cookies_file()
 
@@ -151,7 +154,7 @@ def fetch_transcript_ytdlp(video_url: str) -> Optional[str]:
             "writesubtitles": True,
             "writeautomaticsub": True,
             "subtitleslangs": ["en"],
-            "outtmpl": str(tmp / "%(id)s.%(ext)s"),
+            "outtmpl": str(tmp_path / "%(id)s.%(ext)s"),
             "quiet": True,
             "user_agent": (
                 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -167,15 +170,18 @@ def fetch_transcript_ytdlp(video_url: str) -> Optional[str]:
         with yt_dlp.YoutubeDL(opts) as ydl:
             ydl.extract_info(video_url, download=True)
 
-        for f in tmp.iterdir():
+        for f in tmp_path.iterdir():
             if f.suffix in (".vtt", ".srt"):
                 text = clean_subtitle_text(f.read_text(errors="ignore"))
-                f.unlink(missing_ok=True)
                 return text
 
     except Exception as e:
         print(f"WARN: yt-dlp failed: {e}")
         return None
+    finally:
+        # Cleanup unique directory
+        if tmp_path.exists():
+            shutil.rmtree(tmp_path, ignore_errors=True)
 
     return None
 
@@ -189,15 +195,15 @@ def analyze_with_gemini(video_url: str) -> Optional[Any]:
     Downloads video and uploads to Gemini.
     Returns: types.File object or None
     """
+    tmp_path = Path(f"/tmp/video_{uuid.uuid4()}")
     try:
-        tmp = Path("/tmp/video")
-        tmp.mkdir(exist_ok=True)
+        tmp_path.mkdir(parents=True, exist_ok=True)
         
         cookies_path = get_cookies_file()
 
         ydl_opts = {
             "format": "best[height<=480]/best",
-            "outtmpl": str(tmp / "%(id)s.%(ext)s"),
+            "outtmpl": str(tmp_path / "%(id)s.%(ext)s"),
             "quiet": True,
             "user_agent": (
                 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -210,9 +216,14 @@ def analyze_with_gemini(video_url: str) -> Optional[Any]:
             ydl_opts["cookiefile"] = cookies_path
 
         print(f"INFO: Downloading video for Native Analysis: {video_url}")
+        file_path = None
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(video_url, download=True)
             file_path = ydl.prepare_filename(info)
+
+        if not file_path or not os.path.exists(file_path):
+             print("ERROR: file not found after download")
+             return None
 
         print(f"INFO: Uploading to Gemini: {file_path}")
         client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
@@ -225,18 +236,17 @@ def analyze_with_gemini(video_url: str) -> Optional[Any]:
                 break
             time.sleep(2)
             file_obj = client.files.get(name=file_obj.name)
-
-        # Cleanup
-        try:
-            os.remove(file_path)
-        except:
-            pass
             
         return file_obj
 
     except Exception as e:
         print(f"ERROR: Native analysis failed: {e}")
         return None
+    finally:
+         # Cleanup unique directory
+        if tmp_path.exists():
+            shutil.rmtree(tmp_path, ignore_errors=True)
+
 
 
 # ======================================================

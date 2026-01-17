@@ -11,7 +11,11 @@ def extract_text_from_pdf(file_content):
         reader = PdfReader(pdf_file)
         text = ""
         for page in reader.pages:
-            text += page.extract_text() or ""
+            try:
+                text += page.extract_text() or ""
+            except Exception:
+                # Skip pages that cause extraction errors (e.g. bbox errors)
+                continue
         return text
     except Exception as e:
         return f"Error reading PDF: {str(e)}"
