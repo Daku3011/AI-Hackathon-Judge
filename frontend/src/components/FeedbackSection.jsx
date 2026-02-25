@@ -258,10 +258,12 @@ const FeedbackSection = ({
                     <ul className="space-y-3">
                         {strengths.map((str, i) => (
                             <li key={i} className="text-emerald-700 text-sm flex items-start gap-2">
-                                <span className="mt-1 bg-emerald-100 text-emerald-600 rounded-full p-0.5">
+                                <span className="mt-1 bg-emerald-100 text-emerald-600 rounded-full p-0.5 shrink-0">
                                     <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
                                 </span>
-                                <span>{str}</span>
+                                <div className="prose prose-sm prose-emerald max-w-none">
+                                    <ReactMarkdown>{str}</ReactMarkdown>
+                                </div>
                             </li>
                         ))}
                         {strengths.length === 0 && <li className="text-emerald-700/50 text-sm italic">No specific strengths highlighted.</li>}
@@ -276,10 +278,12 @@ const FeedbackSection = ({
                     <ul className="space-y-3">
                         {improvements.map((imp, i) => (
                             <li key={i} className="text-amber-700 text-sm flex items-start gap-2">
-                                <span className="mt-1 bg-amber-100 text-amber-600 rounded-full p-0.5">
+                                <span className="mt-1 bg-amber-100 text-amber-600 rounded-full p-0.5 shrink-0">
                                     <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
                                 </span>
-                                <span>{imp}</span>
+                                <div className="prose prose-sm prose-amber max-w-none">
+                                    <ReactMarkdown>{imp}</ReactMarkdown>
+                                </div>
                             </li>
                         ))}
                         {improvements.length === 0 && <li className="text-amber-700/50 text-sm italic">No specific improvements suggested.</li>}
@@ -299,14 +303,15 @@ const FeedbackSection = ({
                                 <div className="absolute left-0 top-1 w-6 h-6 bg-indigo-100 border-2 border-indigo-500 rounded-full flex items-center justify-center text-[10px] font-bold text-indigo-700 z-10">
                                     {i + 1}
                                 </div>
-                                <p className="text-indigo-900 text-sm font-medium">{step}</p>
+                                <div className="text-indigo-900 text-sm font-medium prose prose-sm prose-indigo max-w-none">
+                                    <ReactMarkdown>{step}</ReactMarkdown>
+                                </div>
                             </div>
                         ))}
                     </div>
                 </div>
             )}
 
-            {/* Specialized Analysis Grid */}
             {/* Specialized Analysis Grid */}
             {(Object.keys(pptAnalysis).length > 0 || Object.keys(videoAnalysis).length > 0) && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -325,9 +330,9 @@ const FeedbackSection = ({
                                         {pptAnalysis.is_ai_generated ? "AI-Gen" : "Manual"}
                                     </span>
                                 </div>
-                                <p className="text-orange-900/80 text-sm leading-relaxed italic">
-                                    "{pptAnalysis.comments || "No specific comments provided."}"
-                                </p>
+                                <div className="text-orange-900/80 text-sm leading-relaxed italic prose prose-sm prose-orange max-w-none">
+                                    <ReactMarkdown>{pptAnalysis.comments || "No specific comments provided."}</ReactMarkdown>
+                                </div>
                             </div>
                         </div>
                     )}
@@ -358,9 +363,9 @@ const FeedbackSection = ({
                                         Filler: {videoAnalysis.filler_words || "N/A"}
                                     </span>
                                 </div>
-                                <p className="text-cyan-900/80 text-sm leading-relaxed italic">
-                                    "{videoAnalysis.comments || "No specific comments provided."}"
-                                </p>
+                                <div className="text-cyan-900/80 text-sm leading-relaxed italic prose prose-sm prose-cyan max-w-none">
+                                    <ReactMarkdown>{videoAnalysis.comments || "No specific comments provided."}</ReactMarkdown>
+                                </div>
                             </div>
                         </div>
                     )}
@@ -376,7 +381,9 @@ const FeedbackSection = ({
                     {questions.map((q, i) => (
                         <li key={i} className="text-blue-700 text-sm flex items-start gap-3 bg-white/40 p-3 rounded-lg border border-blue-100/50">
                             <span className="font-black text-blue-400">Q:</span>
-                            <span className="font-medium text-slate-700">{q}</span>
+                            <span className="font-medium text-slate-700">
+                                <ReactMarkdown>{q}</ReactMarkdown>
+                            </span>
                         </li>
                     ))}
                     {questions.length === 0 && <li className="text-blue-700/50 text-sm italic text-center py-4">No questions generated.</li>}

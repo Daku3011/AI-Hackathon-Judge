@@ -204,12 +204,14 @@ VIDEO METRICS:
     DOCS: {doc_text[:3000]}
     PPT SLIDES: {ppt_text[:3000]}
     
-    IMPORTANT: For video_analysis, use the VIDEO METRICS above to inform your scoring:
+    IMPORTANT:
+    - Use **Markdown formatting** for all text outputs. Use **bold** for key terms, *italics* for emphasis, and `code` for technical terms.
+    - For video_analysis, use the VIDEO METRICS above to inform your scoring:
     - clarity_score: Based on filler word percentage (low % = high score)
     - pacing_score: Based on words per minute and duration (too fast or slow = lower score)
     - confidence_score: Infer from language patterns in transcript
     - filler_words: "low" if <3%, "medium" if 3-5%, "high" if >5%
-    - comments: Provide specific feedback on presentation quality
+    - comments: Provide specific feedback on presentation quality. Use Markdown.
     
     OUTPUT SCHEMA (JSON ONLY):
     {{
