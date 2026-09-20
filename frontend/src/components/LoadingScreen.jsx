@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 
 const FUN_FACTS = [
     "Setting up the digital judge's panel...",
@@ -19,18 +19,23 @@ const FUN_FACTS = [
     "Analyzing your build scripts for efficiency and optimization."
 ];
 
+const STATIC_PARTICLES = Array.from({ length: 20 }).map((_, i) => ({
+    id: i,
+    left: `${(i * 19 + 7) % 100}%`,
+    top: `${(i * 23 + 13) % 100}%`,
+    size: (i % 3) + 2,
+    duration: 10 + (i % 8),
+    delay: (i * 0.5) % 4
+}));
+
 const TypewriterText = ({ text }) => {
     const [index, setIndex] = useState(0);
-
-    useEffect(() => {
-        setIndex(0);
-    }, [text]);
 
     useEffect(() => {
         if (index < text.length) {
             const timeout = setTimeout(() => {
                 setIndex(prev => prev + 1);
-            }, 30);
+            }, 25);
             return () => clearTimeout(timeout);
         }
     }, [index, text]);
@@ -41,18 +46,7 @@ const TypewriterText = ({ text }) => {
 const LoadingScreen = () => {
     const [factIndex, setFactIndex] = useState(0);
     const [progress, setProgress] = useState(0);
-
-    // Background particles
-    const particles = useMemo(() => {
-        return Array.from({ length: 20 }).map((_, i) => ({
-            id: i,
-            left: `${Math.random() * 100}%`,
-            top: `${Math.random() * 100}%`,
-            size: Math.random() * 3 + 1,
-            duration: Math.random() * 10 + 10,
-            delay: Math.random() * 5
-        }));
-    }, []);
+    const particles = STATIC_PARTICLES;
 
     useEffect(() => {
         // Fact cycle
@@ -149,7 +143,8 @@ const LoadingScreen = () => {
                             fill="transparent"
                             strokeDasharray={2 * Math.PI * 88}
                             strokeDashoffset={2 * Math.PI * 88 * (1 - progress / 100)}
-                            className="text-indigo-600 transition-all duration-300 ease-out stroke-round"
+                            strokeLinecap="round"
+                            className="text-indigo-600 transition-all duration-300 ease-out"
                         />
                     </svg>
 
@@ -182,7 +177,7 @@ const LoadingScreen = () => {
 
                     <div className="space-y-2">
                         <div className="text-slate-300 text-sm leading-relaxed overflow-hidden py-2">
-                            <TypewriterText text={FUN_FACTS[factIndex]} />
+                            <TypewriterText key={factIndex} text={FUN_FACTS[factIndex]} />
                         </div>
                     </div>
                 </div>

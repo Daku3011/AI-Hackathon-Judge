@@ -35,7 +35,38 @@ VIDEO_MODE = os.getenv("VIDEO_MODE", "full")                         # Default b
 
 CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
-# ... (Cache Helpers omitted, assume unchanged) ...
+# ======================================================
+# Cache Helpers
+# ======================================================
+
+def _get_cache_path(video_id: str) -> Path:
+    return CACHE_DIR / f"{video_id}.json"
+
+def _get_cached_transcript(video_id: str) -> Optional[str]:
+    cache_path = _get_cache_path(video_id)
+    if not cache_path.exists():
+        return None
+    try:
+        with open(cache_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        cached_time = data.get("timestamp", 0)
+        if time.time() - cached_time < CACHE_EXPIRY:
+            return data.get("transcript")
+    except Exception as e:
+        print(f"DEBUG: Cache read error for {video_id}: {e}")
+    return None
+
+def _cache_transcript(video_id: str, transcript: str):
+    try:
+        cache_path = _get_cache_path(video_id)
+        with open(cache_path, "w", encoding="utf-8") as f:
+            json.dump({
+                "video_id": video_id,
+                "transcript": transcript,
+                "timestamp": time.time()
+            }, f)
+    except Exception as e:
+        print(f"DEBUG: Cache write error for {video_id}: {e}")
 
 # ======================================================
 # Utilities
@@ -56,27 +87,48 @@ def clean_subtitle_text(text: str) -> str:
 # ======================================================
 # Transcript Quality
 # ======================================================
-# ======================================================
-# Transcript Quality
-# ======================================================
 
-def analyze_transcript_quality(transcript: str) -> Dict:
-    if not transcript:
-        return {"available": False}
+def analyze_transcript_quality(transcript: str) -> Dict[str, Any]:
+    if not transcript or not transcript.strip():
+        return {"available": False, "word_count": 0, "quality_notes": "No transcript provided"}
+
+    if transcript.strip().startswith("[Analysis Failed") or transcript.strip().startswith("[Transcript unavailable"):
+        return {"available": False, "word_count": 0, "quality_notes": "Transcript unavailable"}
 
     words = transcript.split()
     wc = len(words)
+    if wc == 0:
+        return {"available": False, "word_count": 0, "quality_notes": "Empty transcript"}
+
     duration = round(wc / 140, 1)
 
     fillers = {"um", "uh", "like", "basically", "actually"}
     filler_count = sum(words.count(f) for f in fillers)
+    filler_pct = round((filler_count / wc) * 100, 2) if wc else 0
+
+    quality_notes = []
+    if wc < 50:
+        quality_notes.append("Very short presentation")
+    if filler_pct > 5:
+        quality_notes.append("High filler word usage")
+    elif filler_pct < 2:
+        quality_notes.append("Clean speech, low filler words")
+
+    notes_str = "; ".join(quality_notes) if quality_notes else "Standard presentation delivery"
 
     return {
         "available": True,
         "word_count": wc,
         "estimated_minutes": duration,
-        "filler_percentage": round((filler_count / wc) * 100, 2) if wc else 0,
+        "estimated_duration_minutes": duration,
+        "avg_words_per_minute": 140,
+        "filler_word_count": filler_count,
+        "filler_percentage": filler_pct,
+        "quality_notes": notes_str
     }
+
+# Backward compatibility alias
+analyze_video_quality = analyze_transcript_quality
 
 # ======================================================
 # Method 1: youtube-transcript-api (Server-side Fallback)
@@ -269,10 +321,21 @@ def analyze_video(video_url: str) -> Dict:
 
     print(f"DEBUG: orchestrating video analysis for {video_id}")
 
+    # Step 0: Check transcript cache
+    cached_transcript = _get_cached_transcript(video_id)
+    if cached_transcript:
+        print(f"INFO: Using cached transcript for {video_id}")
+        return {
+            "method": "cache",
+            "transcript": cached_transcript,
+            "quality": analyze_transcript_quality(cached_transcript),
+        }
+
     # Step 1: API transcript
     print("DEBUG: Trying Method 1 (Standard API)...")
     transcript = fetch_transcript_api(video_id)
     if transcript:
+        _cache_transcript(video_id, transcript)
         return {
             "method": "api",
             "transcript": transcript,
@@ -284,6 +347,7 @@ def analyze_video(video_url: str) -> Dict:
         print("DEBUG: Trying Method 2 (yt-dlp)...")
         transcript = fetch_transcript_ytdlp(video_url)
         if transcript:
+            _cache_transcript(video_id, transcript)
             return {
                 "method": "yt-dlp",
                 "transcript": transcript,

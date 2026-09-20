@@ -122,7 +122,7 @@ function App() {
                 scores={results.scores}
                 overallScore={
                   results.scores.overall_score ||
-                  ((Object.values(results.scores).reduce((a, b) => a + b, 0) + (results.security_issues.length === 0 ? 10 : 3)) / 7).toFixed(1)
+                  ((['innovation', 'technical', 'relevance', 'uiux', 'impact', 'presentation'].reduce((sum, k) => sum + (Number(results.scores[k]) || 0), 0) + (results.security_issues?.length === 0 ? 10 : 3)) / 7).toFixed(1)
                 }
                 securityIssues={results.security_issues}
                 onRetry={() => setAppState('input')}

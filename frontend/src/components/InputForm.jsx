@@ -5,8 +5,8 @@ const InputForm = ({ onSubmit, isLoading }) => {
     const [videoUrl, setVideoUrl] = useState('');
     const [manualTranscript, setManualTranscript] = useState('');
     const [persona, setPersona] = useState('standard');
-
     const [pptFile, setPptFile] = useState(null);
+    const [docFile, setDocFile] = useState(null);
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -18,6 +18,9 @@ const InputForm = ({ onSubmit, isLoading }) => {
         if (pptFile) {
             formData.append('ppt_file', pptFile);
         }
+        if (docFile) {
+            formData.append('doc_file', docFile);
+        }
         onSubmit(formData);
     };
 
@@ -26,7 +29,7 @@ const InputForm = ({ onSubmit, isLoading }) => {
             {/* Feature Highlights Grid - Now at the Top */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {[
-                    { icon: '👥', title: 'Multi-Judge Panel', desc: 'VC, CTO, and PM personas evaluate your pitch in parallel.' },
+                    { icon: '👥', title: 'Multi-Judge Panel', desc: 'VC, CTO, Product, UI/UX, and Professor personas vote in parallel.' },
                     { icon: '🛡️', title: 'Security Scan', desc: 'Auto-detects API key leaks and vulnerable configurations.' },
                     { icon: '🚀', title: 'Mentor Roadmap', desc: 'Get a clear path to turn your prototype into a product.' },
                 ].map((feat, i) => (
@@ -93,18 +96,35 @@ const InputForm = ({ onSubmit, isLoading }) => {
                         </div>
                     </div>
 
-                    <div className="space-y-2">
-                        <label className="block text-sm font-semibold text-slate-700 uppercase tracking-wide">
-                            Presentation <span className="text-slate-400 font-normal normal-case">(Optional)</span>
-                        </label>
-                        <div className="relative">
-                            <input
-                                type="file"
-                                accept=".ppt,.pptx,.pdf"
-                                className="w-full p-4 pl-12 rounded-xl bg-slate-50 border border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none text-slate-800 font-medium file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
-                                onChange={(e) => setPptFile(e.target.files[0])}
-                            />
-                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-xl opacity-50">📊</div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <label className="block text-sm font-semibold text-slate-700 uppercase tracking-wide">
+                                Presentation <span className="text-slate-400 font-normal normal-case">(.pptx, .pdf)</span>
+                            </label>
+                            <div className="relative">
+                                <input
+                                    type="file"
+                                    accept=".ppt,.pptx,.pdf"
+                                    className="w-full p-3 pl-12 rounded-xl bg-slate-50 border border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none text-slate-800 font-medium file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer"
+                                    onChange={(e) => setPptFile(e.target.files[0] || null)}
+                                />
+                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-xl opacity-50">📊</div>
+                            </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="block text-sm font-semibold text-slate-700 uppercase tracking-wide">
+                                Project Docs / Spec <span className="text-slate-400 font-normal normal-case">(.pdf, .md, .txt)</span>
+                            </label>
+                            <div className="relative">
+                                <input
+                                    type="file"
+                                    accept=".pdf,.md,.txt,.markdown"
+                                    className="w-full p-3 pl-12 rounded-xl bg-slate-50 border border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none text-slate-800 font-medium file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer"
+                                    onChange={(e) => setDocFile(e.target.files[0] || null)}
+                                />
+                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-xl opacity-50">📄</div>
+                            </div>
                         </div>
                     </div>
 
@@ -118,11 +138,14 @@ const InputForm = ({ onSubmit, isLoading }) => {
                                 onChange={(e) => setPersona(e.target.value)}
                                 className="w-full p-4 pl-12 rounded-xl bg-slate-50 border border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none text-slate-800 font-medium appearance-none cursor-pointer"
                             >
-                                <option value="standard">⚖️ Standard Judge (Balanced)</option>
-                                <option value="consensus">🗳️ Multi-Judge Consensus (Panel)</option>
-                                <option value="vc">💸 The VC (Business & Scale)</option>
-                                <option value="cto">🧔🏻‍♂️ The Grumpy CTO (Code Quality)</option>
-                                <option value="roast">🔥 Roast Master (Ruthless & Funny)</option>
+                                <option value="standard">⚖️ Standard Judge (Balanced & Objective)</option>
+                                <option value="consensus">🗳️ Multi-Judge Consensus (5-Persona Parallel Panel)</option>
+                                <option value="vc">💸 The VC (Market Size, Moat & Monetization)</option>
+                                <option value="cto">🧔🏻‍♂️ The Grumpy CTO (Architecture, Rigor & Code Quality)</option>
+                                <option value="product">📦 Product Manager (User Personas & Solution Fit)</option>
+                                <option value="uiux">🎨 UI/UX Designer (Aesthetics, Hierarchy & Polish)</option>
+                                <option value="professor">🎓 The CS Professor (Algorithms, Complexity & Correctness)</option>
+                                <option value="roast">🔥 Roast Master (Brutal, Funny & Ruthless)</option>
                             </select>
                             <div className="absolute left-4 top-1/2 -translate-y-1/2 text-xl opacity-50">🎭</div>
                             <div className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">▼</div>

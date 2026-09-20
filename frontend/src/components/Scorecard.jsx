@@ -1,40 +1,57 @@
-import React from "react";
+import React, { useState } from "react";
+
+const getScoreColor = (value) => {
+  if (value >= 8) return "from-emerald-400 to-teal-500";
+  if (value >= 5) return "from-amber-400 to-orange-500";
+  return "from-red-400 to-pink-500";
+};
+
+const ScoreItem = ({ label, score, customValue }) => (
+  <div className="mb-6 group w-full">
+    <div className="flex justify-between mb-2 items-end gap-4">
+      <span className="text-slate-400 font-bold text-[11px] uppercase tracking-[0.15em] group-hover:text-slate-600 transition-colors pt-0.5 leading-tight">
+        {label}
+      </span>
+      <span className="text-slate-800 font-black text-lg tabular-nums whitespace-nowrap">
+        {customValue || (
+          <>
+            {score || 0}
+            <span className="text-slate-400 text-sm font-bold">/10</span>
+          </>
+        )}
+      </span>
+    </div>
+    <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden shadow-inner">
+      <div
+        className={`h-full rounded-full bg-gradient-to-r ${getScoreColor(score || 0)} transition-all duration-1000 ease-out shadow-sm`}
+        style={{ width: `${((score || 0) / 10) * 100}%` }}
+      ></div>
+    </div>
+  </div>
+);
 
 const ScoreCard = ({ scores, overallScore, onRetry, securityIssues = [] }) => {
-  // scores: { innovation, technical, relevance, uiux, impact, presentation }
+  const [copied, setCopied] = useState(false);
 
-  const getScoreColor = (value) => {
-    if (value >= 8) return "from-emerald-400 to-teal-500";
-    if (value >= 5) return "from-amber-400 to-orange-500";
-    return "from-red-400 to-pink-500";
+  const handleCopySummary = () => {
+    const summary = `🏆 AI Hackathon Judge Scorecard
+Overall Score: ${overallScore}/10
+• Innovation: ${scores.innovation || 0}/10
+• Tech Implementation: ${scores.technical || 0}/10
+• Problem Relevance: ${scores.relevance || 0}/10
+• UI/UX Design: ${scores.uiux || 0}/10
+• Impact & Feasibility: ${scores.impact || 0}/10
+• Presentation: ${scores.presentation || 0}/10
+${securityIssues.length > 0 ? `⚠️ Security Alerts: ${securityIssues.length} found` : "✅ Security: Clean"}
+`;
+    navigator.clipboard.writeText(summary).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }).catch(() => {});
   };
 
-  const ScoreItem = ({ label, score, customValue }) => (
-    <div className="mb-6 group w-full">
-      <div className="flex justify-between mb-2 items-end gap-4">
-        <span className="text-slate-400 font-bold text-[11px] uppercase tracking-[0.15em] group-hover:text-slate-600 transition-colors pt-0.5 leading-tight">
-          {label}
-        </span>
-        <span className="text-slate-800 font-black text-lg tabular-nums whitespace-nowrap">
-          {customValue || (
-            <>
-              {score || 0}
-              <span className="text-slate-400 text-sm font-bold">/10</span>
-            </>
-          )}
-        </span>
-      </div>
-      <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden shadow-inner">
-        <div
-          className={`h-full rounded-full bg-gradient-to-r ${getScoreColor(score || 0)} transition-all duration-1000 ease-out shadow-sm`}
-          style={{ width: `${((score || 0) / 10) * 100}%` }}
-        ></div>
-      </div>
-    </div>
-  );
-
   return (
-    <div className="bg-white/80 backdrop-blur-2xl p-10 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.05)] border border-white/60 h-full flex flex-col justify-between relative overflow-hidden group/card">
+    <div className="bg-white/80 backdrop-blur-2xl p-8 md:p-10 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.05)] border border-white/60 h-full flex flex-col justify-between relative overflow-hidden group/card">
       {/* Background Gradient Detail */}
       <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-50/50 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 group-hover/card:bg-indigo-100/50 transition-colors duration-700"></div>
 
@@ -43,6 +60,13 @@ const ScoreCard = ({ scores, overallScore, onRetry, securityIssues = [] }) => {
           <h3 className="text-2xl font-black text-slate-800 tracking-tight">
             Project Scorecard
           </h3>
+          <button
+            onClick={handleCopySummary}
+            className="text-xs font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg border border-indigo-100 transition-colors"
+            title="Copy score breakdown"
+          >
+            {copied ? "Copied! ✓" : "Share 📋"}
+          </button>
         </div>
 
         {/* Overall Score Circle */}

@@ -272,7 +272,17 @@ async def _evaluate_with_claude(api_key, prompt):
         content = content.split("```json")[1].split("```")[0]
     elif "```" in content:
         content = content.split("```")[1]
-    return content.strip()
+def _clean_json_text(text: str) -> str:
+    if not text:
+        return ""
+    cleaned = text.strip()
+    if cleaned.startswith("```json"):
+        cleaned = cleaned[7:]
+    elif cleaned.startswith("```"):
+        cleaned = cleaned[3:]
+    if cleaned.endswith("```"):
+        cleaned = cleaned[:-3]
+    return cleaned.strip()
 
 async def _evaluate_with_gemini(api_key, prompt, gemini_file_obj=None):
     if not api_key:
@@ -294,7 +304,7 @@ async def _evaluate_with_gemini(api_key, prompt, gemini_file_obj=None):
                 response_mime_type="application/json"
             )
         )
-        return response.text
+        return _clean_json_text(response.text)
     except Exception as e:
         print(f"ERROR calling Gemini: {str(e)}")
         return json.dumps({"error": f"Both AI models failed. Gemini Error: {str(e)}"})

@@ -34,7 +34,7 @@ from services.video_analyzer import (
     extract_video_id,
     analyze_transcript_quality
 )
-from services.doc_analyzer import extract_text_from_pdf
+from services.doc_analyzer import extract_text_from_pdf, extract_text_from_doc
 from services.judge_engine import evaluate_project, generate_roast
 from services.ppt_analyzer import extract_text_from_ppt
 
@@ -140,10 +140,10 @@ async def analyze_project(
     # ---------------------------------------------------------
     # 0. Validation
     # ---------------------------------------------------------
-    if not github_url and not ppt_file and not manual_transcript and not video_url:
+    if not github_url and not ppt_file and not doc_file and not manual_transcript and not video_url:
          return {
              "scores": { "innovation": 0, "quality": 0, "uiux": 0, "impact": 0 },
-             "feedback": "You must provide a GitHub URL, a Presentation, or a Video/Transcript.",
+             "feedback": "You must provide a GitHub URL, a Presentation, a Document, or a Video/Transcript.",
              "whyWontWin": "Because you submitted literally nothing."
          }
 
@@ -231,8 +231,12 @@ async def analyze_project(
     # ---------------------------------------------------------
     doc_text = "No documents provided."
     if doc_file:
-       # Placeholder for future doc types
-       pass
+        try:
+            content = await doc_file.read()
+            doc_text = await run_in_threadpool(extract_text_from_doc, content, doc_file.filename)
+            print(f"INFO: Successfully processed document: {doc_file.filename}")
+        except Exception as e:
+            doc_text = f"Error reading document: {e}"
 
     # ---------------------------------------------------------
     # 4. Analyze Presentation (PPTX/PDF)

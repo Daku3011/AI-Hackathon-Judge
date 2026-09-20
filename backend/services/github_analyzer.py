@@ -24,8 +24,13 @@ def analyze_repo(repo_url: str):
         print(f"DEBUG: Token loaded: {bool(token)}")
         if token:
             print(f"DEBUG: Token prefix: {token[:4]}...")
-            
-        g = Github(token) if token else Github()
+            try:
+                from github import Auth
+                g = Github(auth=Auth.Token(token))
+            except Exception:
+                g = Github(token)
+        else:
+            g = Github()
         
         repo = g.get_repo(full_name)
         
@@ -52,7 +57,9 @@ def analyze_repo(repo_url: str):
         security_patterns = {
             "AWS Key": r"AKIA[0-9A-Z]{16}",
             "OpenAI Key": r"sk-[a-zA-Z0-9]{20}T3BlbkFJ",
-            "Generic Secret": r"(?i)(password|secret|api_key|access_token)\s*[:=]\s*['\"][a-zA-Z0-9]{10,}['\"]"
+            "GitHub Token": r"gh[pousr]_[A-Za-z0-9_]{36,}",
+            "Private Key": r"-----BEGIN (?:RSA |EC |DSA |OPENSSH )?PRIVATE KEY-----",
+            "Generic Secret": r"(?i)(password|secret|api_key|access_token)\s*[:=]\s*['\"][a-zA-Z0-9_\-]{10,}['\"]"
         }
         
         detected_issues = []
@@ -110,15 +117,20 @@ def analyze_repo(repo_url: str):
         # 3. Get Languages
         languages_data = {}
         try:
-            languages_data = repo.get_languages()
-        except:
+            raw_languages = repo.get_languages()
+            languages_data = {
+                k: int(v) for k, v in raw_languages.items()
+                if isinstance(v, (int, float)) and k != "url"
+            }
+        except Exception:
             languages_data = {repo.language: 100} if repo.language else {}
 
         # 4. Estimate LOC (Lines of Code)
         # Rule of thumb: byte size / 40 (approximate average line length)
         total_loc = 0
         for lang, size in languages_data.items():
-            total_loc += size // 40
+            if isinstance(size, (int, float)):
+                total_loc += int(size) // 40
 
         # 5. Construct Summary for LLM
         summary = f"Repository: {full_name}\n"

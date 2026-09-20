@@ -13,12 +13,24 @@ const LanguageBar = ({ languages }) => {
         );
     }
 
-    const totalBytes = Object.values(languages).reduce((a, b) => a + b, 0);
-    const sortedLanguages = Object.entries(languages)
+    const numericEntries = Object.entries(languages).filter(([, bytes]) => typeof bytes === 'number' && !isNaN(bytes) && bytes > 0);
+    if (numericEntries.length === 0) {
+        return (
+            <div className="bg-white/60 backdrop-blur-md p-4 rounded-xl border border-white/80 shadow-sm col-span-2">
+                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Languages</div>
+                <div className="text-lg font-bold text-slate-700 flex items-center gap-2">
+                    <span className="text-indigo-500">💻</span> Multi-stack
+                </div>
+            </div>
+        );
+    }
+
+    const totalBytes = numericEntries.reduce((a, [, b]) => a + b, 0);
+    const sortedLanguages = numericEntries
         .sort(([, a], [, b]) => b - a)
         .map(([name, bytes]) => ({
             name,
-            percentage: ((bytes / totalBytes) * 100).toFixed(1),
+            percentage: ((bytes / (totalBytes || 1)) * 100).toFixed(1),
             color: getLanguageColor(name)
         }));
 
@@ -169,66 +181,72 @@ const FeedbackSection = ({
 
                 <div className="flex items-center gap-4 mb-8 relative z-10">
                     <div className="w-12 h-12 bg-indigo-50 rounded-xl flex items-center justify-center text-2xl shadow-sm border border-indigo-100 text-indigo-600">
-                        🤖
+                        {judgeName?.toUpperCase() === 'ROAST' ? '🔥' : judgeName?.toUpperCase() === 'VC' ? '💰' : judgeName?.toUpperCase() === 'CTO' ? '🧔🏻‍♂️' : judgeName?.toUpperCase() === 'UIUX' ? '🎨' : judgeName?.toUpperCase() === 'PROFESSOR' ? '🎓' : judgeName?.toUpperCase() === 'PRODUCT' ? '📦' : '🤖'}
                     </div>
                     <div>
                         <h3 className="text-2xl font-black text-slate-800 tracking-tight">
-                            Consensus Verdict
+                            {feedback.match(/\[(VC|CTO|PRODUCT|UIUX|PROFESSOR)/i) ? "Consensus Verdict" : `${judgeName || "AI Judge"} Verdict`}
                         </h3>
                         <div className="flex items-center gap-2 mt-0.5">
                             <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">5 Judges Aggregated</span>
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                {feedback.match(/\[(VC|CTO|PRODUCT|UIUX|PROFESSOR)/i) ? "5 Judges Aggregated in Parallel" : `Judge Persona: ${judgeName || "Standard"}`}
+                            </span>
                         </div>
                     </div>
                 </div>
 
                 <div className="space-y-6 relative z-10">
-                    {/* Split feedback by judge if it follows the [JUDGE] format */}
-                    {feedback.split(/\[((?:VC|CTO|PRODUCT|UIUX|PROFESSOR)(?:[^\]]*))\]/i).filter(Boolean).map((part, i, arr) => {
-                        // Regex to parse "VC - 8.5/10" or just "VC"
-                        const match = part.match(/^(VC|CTO|PRODUCT|UIUX|PROFESSOR)(?:\s*-\s*([\d\.]+)\/10)?$/i);
-                        
-                        if (match) {
-                            const judgeLabel = match[1].toUpperCase();
-                            const score = match[2]; // May be undefined
-                            const judgeContent = arr[i + 1] || "";
-
-                            const judgeStyles = {
-                                'VC': { bg: 'bg-blue-50/50', border: 'border-blue-100', text: 'text-blue-700', icon: '💰' },
-                                'CTO': { bg: 'bg-slate-50/50', border: 'border-slate-200', text: 'text-slate-700', icon: '💻' },
-                                'PRODUCT': { bg: 'bg-purple-50/50', border: 'border-purple-100', text: 'text-purple-700', icon: '🎨' },
-                                'UIUX': { bg: 'bg-pink-50/50', border: 'border-pink-100', text: 'text-pink-700', icon: '✨' },
-                                'PROFESSOR': { bg: 'bg-emerald-50/50', border: 'border-emerald-100', text: 'text-emerald-700', icon: '🎓' }
-                            }[judgeLabel] || { bg: 'bg-slate-50', border: 'border-slate-100', text: 'text-slate-600', icon: '⚖️' };
-
-                            return (
-                                <div key={i} className={`${judgeStyles.bg} ${judgeStyles.border} border p-5 rounded-xl transition-all hover:bg-white shadow-sm hover:shadow-md`}>
-                                    <div className="flex items-center justify-between mb-3">
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-lg">{judgeStyles.icon}</span>
-                                            <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${judgeStyles.text}`}>{judgeLabel} Persona</span>
-                                        </div>
-                                        {score && (
-                                            <div className={`px-2 py-1 rounded-md bg-white/50 border ${judgeStyles.border} text-xs font-bold ${judgeStyles.text}`}>
-                                                {score}/10
-                                            </div>
-                                        )}
-                                    </div>
-                                    <div className="prose prose-slate max-w-none prose-p:text-slate-600 prose-p:text-base prose-p:leading-relaxed">
-                                        <ReactMarkdown>{judgeContent.trim()}</ReactMarkdown>
-                                    </div>
-                                </div>
-                            );
+                    {(() => {
+                        const parsedBlocks = [];
+                        const regex = /\[(VC|CTO|PRODUCT|UIUX|PROFESSOR|ROAST)(?:\s*-\s*([\d.]+)\/10)?\]\s*([\s\S]*?)(?=(?:\[(?:VC|CTO|PRODUCT|UIUX|PROFESSOR|ROAST)|$))/gi;
+                        let match;
+                        while ((match = regex.exec(feedback)) !== null) {
+                            parsedBlocks.push({
+                                judgeLabel: match[1].toUpperCase(),
+                                score: match[2],
+                                content: match[3].trim()
+                            });
                         }
-                        return null;
-                    })}
 
-                    {/* Fallback if no judge markers found */}
-                    {!feedback.match(/\[(VC|CTO|PRODUCT|UIUX|PROFESSOR)/i) && (
-                        <div className="prose prose-slate max-w-none prose-p:text-slate-600 prose-p:text-lg prose-p:leading-relaxed">
-                            <ReactMarkdown>{feedback}</ReactMarkdown>
-                        </div>
-                    )}
+                        if (parsedBlocks.length > 0) {
+                            return parsedBlocks.map((block, idx) => {
+                                const styles = {
+                                    'VC': { bg: 'bg-blue-50/50', border: 'border-blue-100', text: 'text-blue-700', icon: '💰' },
+                                    'CTO': { bg: 'bg-slate-50/50', border: 'border-slate-200', text: 'text-slate-700', icon: '💻' },
+                                    'PRODUCT': { bg: 'bg-purple-50/50', border: 'border-purple-100', text: 'text-purple-700', icon: '📦' },
+                                    'UIUX': { bg: 'bg-pink-50/50', border: 'border-pink-100', text: 'text-pink-700', icon: '🎨' },
+                                    'PROFESSOR': { bg: 'bg-emerald-50/50', border: 'border-emerald-100', text: 'text-emerald-700', icon: '🎓' },
+                                    'ROAST': { bg: 'bg-red-50/50', border: 'border-red-100', text: 'text-red-700', icon: '🔥' },
+                                }[block.judgeLabel] || { bg: 'bg-slate-50', border: 'border-slate-100', text: 'text-slate-600', icon: '⚖️' };
+
+                                return (
+                                    <div key={idx} className={`${styles.bg} ${styles.border} border p-5 rounded-xl transition-all hover:bg-white shadow-sm hover:shadow-md`}>
+                                        <div className="flex items-center justify-between mb-3">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-lg">{styles.icon}</span>
+                                                <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${styles.text}`}>{block.judgeLabel} Persona</span>
+                                            </div>
+                                            {block.score && (
+                                                <div className={`px-2 py-1 rounded-md bg-white/50 border ${styles.border} text-xs font-bold ${styles.text}`}>
+                                                    {block.score}/10
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="prose prose-slate max-w-none prose-p:text-slate-600 prose-p:text-base prose-p:leading-relaxed">
+                                            <ReactMarkdown>{block.content}</ReactMarkdown>
+                                        </div>
+                                    </div>
+                                );
+                            });
+                        }
+
+                        return (
+                            <div className="prose prose-slate max-w-none prose-p:text-slate-600 prose-p:text-lg prose-p:leading-relaxed">
+                                <ReactMarkdown>{feedback}</ReactMarkdown>
+                            </div>
+                        );
+                    })()}
                 </div>
             </div>
 
