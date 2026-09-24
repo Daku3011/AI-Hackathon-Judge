@@ -1,158 +1,130 @@
-# Video Analysis Improvements
+# Video Analysis Architecture & Improvements 🎥⚡
 
-## Overview
+This document details the video analysis pipeline of the **AI Hackathon Judge**, engineered for high reliability, low latency, and resilience against aggressive YouTube bot blocks on cloud providers such as Render.com, AWS, and GCP.
 
-This document describes the improvements made to the video analysis features to enhance reliability and performance, especially for API deployments on platforms like Render.com.
+---
 
-## Key Improvements
+## 🎯 The Challenge: Datacenter IP Throttling
 
-### 1. **Caching System**
-- **Feature**: Transcript caching with configurable expiry
-- **Benefits**: Reduces API calls to YouTube, faster response times for repeated requests
-- **Configuration**:
-  - `TRANSCRIPT_CACHE_DIR`: Directory for cache storage (default: `/tmp/transcript_cache`)
-  - `TRANSCRIPT_CACHE_EXPIRY`: Cache expiry time in seconds (default: 86400 = 24 hours)
+Automated video transcription on public cloud platforms faces severe restrictions:
+1. **IP Blocking**: YouTube detects datacenter IP addresses (e.g. Render, AWS, DigitalOcean) and blocks unauthenticated requests with `HTTP 429 Too Many Requests` or `"Sign in to confirm you're not a bot"`.
+2. **Missing Subtitles**: Many hackathon demo videos lack pre-generated closed captions.
+3. **Execution Latency & Resource Constraints**: Downloading full video files inside a 512MB RAM container can cause `OOMKilled` (Out of Memory) crashes or request timeouts.
 
-### 2. **Retry Logic with Exponential Backoff**
-- **Feature**: Automatic retry on failed transcript fetches
-- **Parameters**: 3 retry attempts with exponential backoff (1s, 2s, 4s)
-- **Benefits**: Handles transient network issues and rate limiting
+---
 
-### 3. **Enhanced Error Handling**
-- **Feature**: Comprehensive error messages and logging
-- **Benefits**: Better debugging and user feedback
-- **Error Types**:
-  - Invalid video ID
-  - Transcript disabled/unavailable
-  - Network timeouts
-  - API rate limiting
+## 🛡️ The Solution: 4-Tier Resilient Fallback Architecture
 
-### 4. **Video Quality Analysis**
-- **Feature**: Automated analysis of video transcript quality
-- **Metrics**:
-  - Word count
-  - Estimated duration
-  - Filler word detection (um, uh, like, etc.)
-  - Speaking pace analysis
-  - Quality scoring
+To guarantee that users always receive evaluation results, we built a 4-tier fallback pipeline:
 
-### 5. **Improved URL Validation**
-- **Feature**: Enhanced video ID extraction with validation
-- **Supports**:
-  - Standard YouTube URLs (`youtube.com/watch?v=...`)
-  - Short URLs (`youtu.be/...`)
-  - Embed URLs (`youtube.com/embed/...`)
-  - URLs with additional parameters
+```
+┌─────────────────────────────────────────────────────────────┐
+│ Tier 1: Client-Side Extraction (Browser)                   │
+│ Runs `youtube-transcript` in the user's browser (Home IP)   │
+└──────────────────────────────┬──────────────────────────────┘
+                               │ (Fails or disabled)
+                               ▼
+┌─────────────────────────────────────────────────────────────┐
+│ Tier 2: Server-Side API with Cookie Authentication          │
+│ `YouTubeTranscriptApi` authenticated with `cookies.txt`     │
+└──────────────────────────────┬──────────────────────────────┘
+                               │ (Fails)
+                               ▼
+┌─────────────────────────────────────────────────────────────┐
+│ Tier 3: Headless Subtitle Scraper (`yt-dlp`)                │
+│ Uses browser User-Agent spoofing in isolated UUID folders   │
+└──────────────────────────────┬──────────────────────────────┘
+                               │ (Fails / Full Mode enabled)
+                               ▼
+┌─────────────────────────────────────────────────────────────┐
+│ Tier 4: Native Multimodal Vision (Gemini 2.5 Flash)         │
+│ Downloads 480p stream -> Uploads to Gemini File API         │
+└─────────────────────────────────────────────────────────────┘
+```
 
-### 7. **Robust Fallback Strategy**
-- **Feature**: Manual Transcript Override
-- **Benefits**: Completely bypasses YouTube API blocking/errors by allowing user to provide text.
-- **Workflow**:
-  1. System attempts to fetch transcript via API (using Proxy if configured).
-  2. If failed, user can paste transcript text into the "Manual Transcript" field.
-  3. System uses pasted text for quality analysis and judging.
+---
 
-### 8. **Better AI Prompts**
-- **Feature**: Enhanced prompts for AI model with detailed video metrics
-- **Includes**:
-  - Speaking metrics (clarity, pacing, confidence)
-  - Filler word analysis
-  - Duration and word count
-  - Specific feedback on presentation quality
+## ⚙️ Detailed Tier Breakdown
 
-## Configuration for Render.com
+### Tier 1: Browser-Side Extraction (Frontend Interceptor)
+- **Mechanism**: The React client uses `youtube-transcript` before submitting the form.
+- **Why it works**: Because the HTTP request originates from the user's personal browser (residential IP), YouTube's bot detection algorithms are not triggered.
+- **Payload**: The extracted caption text is injected into `manual_transcript` in the `FormData` submission.
 
-### Environment Variables
+### Tier 2: Authenticated Server-Side API (`fetch_transcript_api`)
+- **Mechanism**: Calls `YouTubeTranscriptApi.get_transcript(video_id, cookies=cookies_path)`.
+- **Cookie Resolution**: Automatically scans the filesystem for valid cookies:
+  1. `YOUTUBE_COOKIES_FILE` environment variable
+  2. `cookies.txt` (root directory)
+  3. `backend/cookies.txt`
+  4. `/etc/secrets/cookies.txt` (Render Secret File mount path)
+  5. `/app/cookies.txt` (Docker container path)
 
-Add these to your Render.com environment configuration:
+### Tier 3: Isolated `yt-dlp` Subtitle Fetching (`fetch_transcript_ytdlp`)
+- **Mechanism**: Executes `yt-dlp` with `--skip-download --writesubtitles --writeautomaticsub`.
+- **Security & Hygiene**: Executes inside an isolated temporary directory (`/tmp/ytdlp_subs_<UUID>`) and guarantees deletion in a `finally` block to prevent disk leaks.
+- **Browser Fingerprinting**: Configures modern desktop Chrome User-Agent strings and Android/Web player client arguments.
+
+### Tier 4: Gemini Multimodal Native Video Vision (`analyze_with_gemini`)
+- **Mechanism**: If text transcripts are unavailable, downloads the lowest acceptable resolution video (capped at 480p) to conserve bandwidth.
+- **Processing**: Uploads the video file to the **Google Gemini File API** (`client.files.upload`).
+- **Poll State**: Monitors file processing state until active, then passes the native file object directly to Gemini 2.5 Flash, allowing the model to "watch" the demo and listen to the audio natively.
+
+---
+
+## 🎛️ Video Execution Modes (`VIDEO_MODE`)
+
+You can control video analysis depth via the `VIDEO_MODE` environment variable:
+
+| Mode | Allowed Strategies | Best Used For |
+| :--- | :--- | :--- |
+| `safe` | Tier 1 (Browser) + Tier 2 (Server API) | Low-memory instances (512MB RAM), strict bandwidth budgets. |
+| `balanced` | Tier 1 + Tier 2 + Tier 3 (`yt-dlp` Subtitles) | Standard cloud instances (Render Free tier, Docker containers). |
+| `full` *(default)* | All Tiers (including Tier 4 Multimodal Video Download) | Local development, high-tier cloud servers with 1GB+ RAM. |
+
+---
+
+## 📊 Speech & Presentation Analytics (`analyze_transcript_quality`)
+
+Once transcript text is extracted, the engine runs heuristic speech analysis:
+
+- **Word Count**: Total spoken words.
+- **Estimated Duration**: Calculated at an average conversational baseline of 140 WPM (`wc / 140`).
+- **Filler Word Detection**: Analyzes exact token occurrences of common hesitation markers (`um`, `uh`, `like`, `basically`, `actually`).
+- **Filler Density**: `(filler_count / total_words) * 100`.
+  - `< 3%`: Low filler usage (High Confidence score).
+  - `3% - 5%`: Medium filler usage.
+  - `> 5%`: High filler usage (Flags presentation nervousness).
+- **Pacing Score**: Evaluates whether speech was rushed (>170 WPM) or sluggish (<110 WPM).
+
+---
+
+## 🔑 Environment Configuration Reference
 
 ```bash
-# Required
-GEMINI_API_KEY=your_gemini_api_key
-GITHUB_TOKEN=your_github_token
+# Video Strategy Setting
+VIDEO_MODE=full                                # Options: safe | balanced | full
 
-# Optional - Video Analysis
-TRANSCRIPT_CACHE_DIR=/tmp/transcript_cache
-TRANSCRIPT_CACHE_EXPIRY=86400
+# Transcript Caching
+TRANSCRIPT_CACHE_DIR=/tmp/transcript_cache     # Disk cache directory
+TRANSCRIPT_CACHE_EXPIRY=86400                 # 24 hours in seconds
+TRANSCRIPT_BLOCK_EXPIRY=21600                 # 6 hours in seconds
 
-# Optional - YouTube API bypass (if needed)
-YOUTUBE_PROXY=http://your-proxy-server:port
-YOUTUBE_COOKIES_FILE=/path/to/cookies.txt
+# Authentication & Proxy (Optional)
+YOUTUBE_COOKIES_FILE=/etc/secrets/cookies.txt  # Explicit path to cookies.txt
+YOUTUBE_PROXY=http://user:pass@host:port       # Optional proxy URL
 ```
 
-### Deployment Considerations
+---
 
-1. **Cache Directory**: On Render.com, use `/tmp` for temporary storage as it's ephemeral
-2. **Timeouts**: Default timeout is 30 seconds per attempt (90 seconds total with retries)
-3. **Rate Limiting**: Cache helps avoid YouTube API rate limits
-4. **Memory**: Cache uses minimal disk space (~1KB per transcript)
+## 🧪 Testing Video Analysis
 
-## API Response Format
-
-### Video Metadata Response
-```json
-{
-  "available": true,
-  "word_count": 450,
-  "estimated_duration_minutes": 3.2,
-  "avg_words_per_minute": 140,
-  "filler_word_count": 12,
-  "filler_percentage": 2.67,
-  "quality_notes": "Good quality transcript"
-}
-```
-
-### Video Analysis Response
-```json
-{
-  "video_analysis": {
-    "clarity_score": 8,
-    "pacing_score": 7,
-    "confidence_score": 9,
-    "filler_words": "low",
-    "comments": "Clear presentation with good pacing. Minimal filler words indicate confidence."
-  }
-}
-```
-
-## Testing
-
-Run the test suite to verify improvements:
-
+Run the unit test suite:
 ```bash
-cd /home/runner/work/AI-Hackathon-Judge/AI-Hackathon-Judge
-python -m unittest tests.test_video_analyzer -v
+python3 -m unittest tests.test_video_analyzer -v
 ```
 
-## Performance Improvements
-
-- **First Request**: ~5-10 seconds (includes YouTube API call)
-- **Cached Request**: <1 second
-- **Failed Requests**: Max 90 seconds (3 × 30s timeout)
-- **Cache Hit Rate**: ~80-90% for repeated videos
-
-## Error Recovery
-
-The system now handles:
-1. Network timeouts gracefully
-2. YouTube API rate limits (with exponential backoff)
-3. Missing or disabled transcripts
-4. Invalid video URLs
-5. API failures (returns informative error messages)
-
-## Monitoring
-
-Key metrics to monitor in production:
-- Cache hit rate
-- Average response time
-- Failed transcript fetch rate
-- YouTube API rate limit errors
-
-## Future Enhancements
-
-Potential improvements for future versions:
-1. Video duration extraction from YouTube API
-2. Speech sentiment analysis
-3. Voice clarity scoring (requires audio processing)
-4. Multi-language support improvements
-5. Database-backed caching (Redis/Memcached)
+Run the real-world integration verification test:
+```bash
+python3 tests/integration_test_video.py
+```

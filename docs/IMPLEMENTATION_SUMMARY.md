@@ -1,264 +1,167 @@
-# Video Analysis Improvements - Implementation Summary
+# System Architecture & Implementation Summary 📋
 
 ## Project Overview
 
-Successfully implemented comprehensive improvements to the video analysis features in the AI Hackathon Judge application, optimized for deployment on Render.com and similar cloud platforms.
+The **AI Hackathon Judge** is a full-stack, AI-powered automated evaluation system designed to stress-test hackathon submissions before live presentation day. It ingests multi-source project artifacts (GitHub repositories, live website URLs, pitch decks, specifications, and demo videos), runs static security and quality audits, and dispatches parallel LLM persona evaluations using **Google Gemini 2.5 Flash**.
 
-## Problem Statement
+---
 
-The original request was to "Identify and suggest improvements to video analysis features on the model which should work on the API call from onrender.com site."
+## 🏗️ Architectural Topology
 
-## Solution Delivered
-
-### Core Improvements
-
-1. **Smart Caching System**
-   - Persistent disk-based caching using SHA-256 hashing
-   - Configurable cache expiry (default: 24 hours)
-   - Reduces YouTube API calls by 80-90%
-   - Automatic cleanup of expired cache files
-   - Proper error handling for file system operations
-
-2. **Retry Logic with Exponential Backoff**
-   - 3 retry attempts with exponential delays (1s, 2s, 4s)
-   - Handles transient network failures
-   - Protects against rate limiting
-   - Detailed logging for debugging
-
-3. **Enhanced Error Handling**
-   - Graceful degradation when transcripts unavailable
-   - Informative error messages for users
-   - Comprehensive logging for debugging
-   - Proper handling of edge cases
-
-4. **Video Quality Analysis**
-   - Word count and duration estimation
-   - Accurate filler word detection (using word boundaries)
-   - Speaking pace analysis
-   - Quality scoring and recommendations
-
-5. **Improved URL Validation**
-   - Supports all YouTube URL formats
-   - Video ID length validation
-   - Handles URLs with parameters
-   - Robust error handling for invalid URLs
-
-6. **Enhanced AI Analysis**
-   - Video metadata integration
-   - Context-aware prompts
-   - Detailed scoring guidance
-   - Better presentation quality insights
-
-## Technical Details
-
-### Files Modified
-
-1. **backend/services/video_analyzer.py** (Major changes)
-   - Added caching functions
-   - Implemented retry logic
-   - Enhanced error handling
-   - Added video quality analysis
-   - Improved URL parsing
-
-2. **backend/services/judge_engine.py** (Updates)
-   - Added video_metadata parameter
-   - Enhanced AI prompts with video metrics
-   - Improved scoring guidance
-
-3. **backend/main.py** (Updates)
-   - Integrated video quality analysis
-   - Added metadata pipeline
-   - Enhanced logging
-
-4. **tests/test_consensus_mock.py** (Updated)
-   - Updated to match new function signatures
-
-### Files Created
-
-1. **tests/test_video_analyzer.py**
-   - 13 comprehensive unit tests
-   - Tests all major functions
-   - Covers edge cases
-
-2. **tests/integration_test_video.py**
-   - End-to-end integration tests
-   - Validates complete workflow
-
-3. **docs/VIDEO_ANALYSIS_IMPROVEMENTS.md**
-   - Complete technical documentation
-   - Configuration guide
-   - Performance metrics
-
-4. **.env.example**
-   - Environment variable template
-   - Configuration documentation
-
-5. **docs/RENDER_DEPLOYMENT.md**
-   - Step-by-step deployment guide
-   - Troubleshooting section
-   - Performance optimization tips
-
-## Code Quality
-
-### All Code Review Issues Addressed
-
-✅ **Security**: Replaced MD5 with SHA-256 hashing
-✅ **Error Handling**: Added specific error handling for file operations
-✅ **Accuracy**: Fixed filler word detection to avoid false positives
-✅ **Thread Safety**: Added comprehensive warnings and documentation
-✅ **Robustness**: Improved object handling and error messages
-
-### Test Coverage
-
-- **14 Unit Tests**: All passing
-- **Integration Tests**: Complete workflow validated
-- **Backward Compatibility**: No breaking changes
-- **Zero Regressions**: All existing tests pass
-
-## Performance Metrics
-
-### Before Improvements
-- Every request hits YouTube API
-- No retry on failures
-- Basic error messages
-- No video quality metrics
-- ~5-10 second response time
-
-### After Improvements
-- 80-90% cache hit rate
-- Automatic retry on failures
-- Detailed error information
-- Comprehensive quality metrics
-- <1 second for cached requests
-- ~5-10 seconds for first request
-
-## Deployment Readiness
-
-### Production-Ready Features
-✅ Caching configured for ephemeral storage
-✅ Environment variables documented
-✅ Error handling comprehensive
-✅ Logging for debugging
-✅ Thread-safety documented
-✅ Deployment guide complete
-
-### Render.com Specific
-✅ Cache directory: `/tmp/transcript_cache`
-✅ Environment configuration examples
-✅ Troubleshooting guide
-✅ Performance optimization tips
-✅ Free tier compatibility
-
-## Documentation
-
-### User Documentation
-- README.md updated with video analysis features
-- Environment variables documented
-- Testing instructions updated
-
-### Developer Documentation
-- Video analysis improvements guide
-- Render.com deployment walkthrough
-- Integration test examples
-- Code comments and docstrings
-
-### Deployment Documentation
-- Step-by-step deployment guide
-- Environment configuration
-- Troubleshooting section
-- Performance optimization
-
-## Testing Strategy
-
-### Unit Tests
-```bash
-python -m unittest tests.test_video_analyzer -v
 ```
-- 13 tests covering all functions
-- Edge cases and error conditions
-- Caching and quality analysis
-
-### Integration Tests
-```bash
-python tests/integration_test_video.py
-```
-- End-to-end workflow validation
-- URL parsing tests
-- Error handling verification
-
-### All Tests
-```bash
-python -m unittest discover tests -v
-```
-- 14 tests total (all passing)
-- No breaking changes
-- Backward compatible
-
-## Environment Configuration
-
-### Required
-```bash
-GEMINI_API_KEY=your_key
+┌────────────────────────────────────────────────────────────────────────┐
+│                        FRONTEND (React 18 + Vite)                     │
+│  • InputForm: Validates URLs, uploads decks (.pptx/.pdf) & specs       │
+│  • youtube-transcript: Client-side caption fetcher to avoid cloud blocks│
+│  • Scorecard: Interactive circular gauge & 6-criteria progress bars    │
+│  • FeedbackSection: Markdown-formatted consensus cards & roadmap HUD   │
+└───────────────────────────────────┬────────────────────────────────────┘
+                                    │ HTTP POST /analyze (FormData)
+                                    ▼
+┌────────────────────────────────────────────────────────────────────────┐
+│                      BACKEND (FastAPI + Uvicorn)                       │
+│                                                                        │
+│  ┌───────────────────────┐  ┌───────────────────────┐                 │
+│  │  github_analyzer.py   │  │   site_analyzer.py    │                 │
+│  │  • PyGithub client    │  │   • BeautifulSoup4    │                 │
+│  │  • BFS file search    │  │   • DOM asset stats   │                 │
+│  │  • Secret regex scan  │  │   • Route mapping     │                 │
+│  │  • Language & LOC     │  │   • Tech stack detect │                 │
+│  └──────────┬────────────┘  └───────────┬───────────┘                 │
+│             │                           │                             │
+│  ┌──────────▼────────────┐  ┌───────────▼───────────┐                 │
+│  │   doc_analyzer.py     │  │    ppt_analyzer.py    │                 │
+│  │   • pypdf text parser │  │    • python-pptx      │                 │
+│  │   • Markdown / text   │  │    • Slide & tables   │                 │
+│  └──────────┬────────────┘  └───────────┬───────────┘                 │
+│             │                           │                             │
+│  ┌──────────▼───────────────────────────▼───────────┐                 │
+│  │               video_analyzer.py                  │                 │
+│  │   • 4-tier fallback (Browser, API, yt-dlp, Vision)│                 │
+│  │   • Cookie jar discovery & transcript cache      │                 │
+│  │   • Speech metrics (WPM, filler word density)    │                 │
+│  └──────────────────────┬───────────────────────────┘                 │
+│                         │                                             │
+│                         ▼                                             │
+│  ┌──────────────────────────────────────────────────┐                 │
+│  │               judge_engine.py                    │                 │
+│  │   • Parallel consensus via asyncio.gather        │                 │
+│  │   • Personas: VC, CTO, Product, UI/UX, Professor │                 │
+│  │   • Mathematical score normalization & Markdown  │                 │
+│  └──────────────────────────────────────────────────┘                 │
+└────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Recommended
-```bash
-GITHUB_TOKEN=your_token
+---
+
+## 📦 Services Specification
+
+### 1. `backend/services/github_analyzer.py`
+- **Purpose**: Clones repository intelligence via the GitHub API without cloning full git objects.
+- **Traversal Strategy**: Constrained Breadth-First Search (BFS) capped at depth 2 and maximum 50 files.
+- **Security Scan**: Regex audit checking for leaked credentials (AWS, OpenAI, GitHub PATs, Private Keys, Generic Secrets).
+- **Codebase Metrics**: Calculates exact byte percentages per language and estimates Lines of Code (LOC) via byte-weight heuristics (`bytes // 40`).
+
+### 2. `backend/services/site_analyzer.py`
+- **Purpose**: Evaluates deployed applications when a GitHub repository is not available.
+- **DOM & Asset Profiling**: Measures page weight (KB), scripts, stylesheets, and images.
+- **Route Crawler**: Maps up to 20 unique internal routes ("pinpoints") within the target domain.
+- **Stack Detection**: Identifies React, Next.js, Vue, Angular, WordPress, Tailwind CSS, Bootstrap, and Google Analytics from DOM markers and asset patterns.
+
+### 3. `backend/services/video_analyzer.py`
+- **Purpose**: High-reliability presentation extraction with a 4-tier fallback system.
+- **Tier 1**: Client-side `youtube-transcript` extraction from the user's browser.
+- **Tier 2**: Server-side `YouTubeTranscriptApi` with automatic cookie discovery (`cookies.txt`, `/etc/secrets/cookies.txt`).
+- **Tier 3**: Headless subtitle extraction via `yt-dlp` in isolated `uuid4` temporary directories.
+- **Tier 4**: Multimodal upload to Google Gemini 2.5 Flash File API for visual presentation analysis.
+- **Speech Metrics**: Evaluates Words Per Minute (WPM) and filler word frequencies (`um`, `uh`, `like`, `basically`, `actually`).
+
+### 4. `backend/services/ppt_analyzer.py` & `doc_analyzer.py`
+- **Purpose**: Ingests pitch decks (`.pptx`, `.ppt`, `.pdf`) and technical specifications (`.pdf`, `.md`, `.txt`, `.rst`).
+- **Features**: Linear slide and table extraction without duplicate runs, structured page-by-page PDF extraction.
+
+### 5. `backend/services/judge_engine.py`
+- **Purpose**: Orchestrates AI evaluations using Google Gemini 2.5 Flash.
+- **Multi-Judge Consensus**: Dispatches 5 concurrent calls with specialized system personas (VC, CTO, Product Manager, UI/UX Designer, CS Professor) via `asyncio.gather`.
+- **Score Normalization**: Averages scores across 6 criteria (Innovation, Technical, Relevance, UI/UX, Impact, Presentation) and parses individual judge verdicts (`[CTO - 8.2/10]`).
+- **Markdown Formatting**: Guides the model to output rich text, rendered directly on the frontend.
+
+---
+
+## 📡 API Contract (`POST /analyze`)
+
+### Request (`multipart/form-data`)
+- `github_url`: (Optional string) GitHub repository URL or live website URL.
+- `video_url`: (Optional string) YouTube demo link.
+- `manual_transcript`: (Optional string) Pasted transcript or speaker notes (or browser-extracted text).
+- `persona`: (Optional string) `standard`, `consensus`, `vc`, `cto`, `product`, `uiux`, `professor`, or `roast`. Default: `standard`.
+- `ppt_file`: (Optional file) `.ppt`, `.pptx`, or `.pdf`.
+- `doc_file`: (Optional file) `.pdf`, `.md`, `.txt`, `.markdown`, or `.rst`.
+
+### Response (`application/json`)
+```json
+{
+  "scores": {
+    "innovation": 8.5,
+    "technical": 9.0,
+    "relevance": 8.0,
+    "uiux": 7.5,
+    "impact": 8.5,
+    "presentation": 8.0
+  },
+  "strengths": [
+    "Clean microservices architecture with isolated responsibilities",
+    "Effective 4-tier fallback handling YouTube bot protection"
+  ],
+  "improvements": [
+    "Add automated CI integration tests for edge-case payloads",
+    "Implement rate-limiting middleware on the /analyze endpoint"
+  ],
+  "questions": [
+    "How does your architecture handle concurrent video downloads under memory constraints?",
+    "What is your strategy for scaling the consensus panel to additional personas?"
+  ],
+  "feedback": "[CTO - 8.8/10] Strong architectural foundations...\n\n[VC - 8.2/10] Compelling market opportunity...",
+  "whyWontWin": "Lack of production telemetry and monitoring for user conversion funnels.",
+  "win_probability": 78.5,
+  "project_roadmap": [
+    "Step 1: Set up Redis for shared distributed caching",
+    "Step 2: Add OAuth support for evaluating private repositories",
+    "Step 3: Integrate webhook alerts for automated judging pipelines"
+  ],
+  "security_issues": [],
+  "ppt_analysis": {
+    "is_relevant": true,
+    "is_ai_generated": false,
+    "comments": "Deck clearly states the problem statement and competitive advantage."
+  },
+  "video_analysis": {
+    "clarity_score": 8,
+    "pacing_score": 8,
+    "confidence_score": 9,
+    "filler_words": "low",
+    "comments": "Confident delivery with steady pace and minimal filler words."
+  },
+  "languages": { "JavaScript": 65000, "Python": 45000 },
+  "files_count": 28,
+  "estimated_loc": 2750,
+  "site_analysis": null,
+  "is_github": true,
+  "judge_name": "CONSENSUS"
+}
 ```
 
-### Optional (Video Analysis)
+---
+
+## 🧪 Verification & Test Suite
+
+The test suite covers all core modules:
+- `tests/test_consensus_mock.py`: Validates parallel consensus panel execution, score parsing, and fallback behaviors.
+- `tests/test_video_analyzer.py`: Validates URL parsing, transcript caching, expiry thresholds, and speech metrics.
+- `tests/test_github.py`: Validates BFS limits, language calculations, and secret detection.
+- `tests/integration_test_video.py`: End-to-end integration test for YouTube transcription.
+
+Run tests:
 ```bash
-TRANSCRIPT_CACHE_DIR=/tmp/transcript_cache
-TRANSCRIPT_CACHE_EXPIRY=86400
-YOUTUBE_PROXY=http://proxy:8080  # If needed
+python3 -m unittest discover tests -v
 ```
-
-## Monitoring & Maintenance
-
-### Key Metrics to Monitor
-- Cache hit rate (target: >80%)
-- Transcript fetch success rate
-- Average response time
-- YouTube API errors
-- Cache disk usage
-
-### Recommended Actions
-- Monitor logs for errors
-- Check cache performance
-- Update youtube-transcript-api as needed
-- Rotate API keys periodically
-
-## Known Limitations
-
-1. **Legacy API**: Thread-safety issues with proxy configuration in legacy youtube-transcript-api (< 0.5.0)
-   - **Solution**: Use version 0.6.2+ (already in requirements.txt)
-   
-2. **Cache Storage**: Uses ephemeral storage on Render.com
-   - **Impact**: Cache cleared on container restart
-   - **Mitigation**: First request after restart slightly slower
-
-3. **YouTube Rate Limits**: Can occur with heavy usage
-   - **Solution**: Caching reduces API calls significantly
-
-## Future Enhancements
-
-Potential improvements for future versions:
-- Database-backed caching (Redis/Memcached)
-- Video duration extraction from YouTube API
-- Speech sentiment analysis
-- Voice clarity scoring (requires audio processing)
-- Multi-language support improvements
-
-## Conclusion
-
-All requirements have been successfully implemented and tested. The video analysis features are now production-ready for deployment on Render.com with:
-
-- ✅ Robust error handling
-- ✅ Smart caching system
-- ✅ Retry logic
-- ✅ Enhanced quality metrics
-- ✅ Comprehensive documentation
-- ✅ Complete test coverage
-- ✅ Zero breaking changes
-
-The implementation is ready for merge and deployment.

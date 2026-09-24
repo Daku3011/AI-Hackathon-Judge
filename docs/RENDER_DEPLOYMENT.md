@@ -1,213 +1,105 @@
-# Deployment Guide for Render.com
+# Deployment Guide for Render.com 🚀
 
-This guide walks you through deploying the AI Hackathon Judge on Render.com with all video analysis features enabled.
+This guide walks you through deploying the **AI Hackathon Judge** on [Render.com](https://render.com) using its native Docker environment, with full support for GitHub repo analysis, website inspection, presentation parsing, and robust video transcription.
 
-## Prerequisites
+---
 
-- A Render.com account (free tier works)
-- A Google Gemini API key
-- A GitHub personal access token (optional but recommended)
+## 📋 Prerequisites
 
-## Step 1: Fork/Clone Repository
+- A [Render.com](https://render.com) account (Free or Starter tier)
+- A **Google Gemini API Key** from [Google AI Studio](https://aistudio.google.com/)
+- A **GitHub Personal Access Token** (optional, recommended to prevent GitHub rate limits)
 
-1. Fork or clone this repository to your GitHub account
-2. Make sure your repository is accessible to Render.com
+---
 
-## Step 2: Create a Web Service on Render.com
+## 🛠️ Step 1: Connect Repository to Render
 
-1. Go to [Render Dashboard](https://dashboard.render.com/)
-2. Click **New +** → **Web Service**
-3. Connect your GitHub repository
-4. Configure the service:
+1. Push your latest code to GitHub.
+2. In the [Render Dashboard](https://dashboard.render.com/), click **New +** → **Web Service**.
+3. Select your repository: `AI-Hackathon-Judge`.
+4. Configure the service settings:
+   - **Name**: `ai-hackathon-judge` (or your choice)
+   - **Region**: Choose the closest location to your audience (e.g., Oregon, Frankfurt, Singapore)
+   - **Branch**: `master` (or `main`)
+   - **Root Directory**: *Leave blank* (uses repo root)
+   - **Runtime**: `Docker`
+   - **Instance Type**: `Free` (512 MB RAM) or `Starter` ($7/mo recommended for continuous uptime)
 
-### Basic Settings
-- **Name**: `ai-hackathon-judge` (or your preferred name)
-- **Region**: Choose closest to your users
-- **Branch**: `main` (or your deployment branch)
-- **Root Directory**: Leave empty (use repository root)
-- **Runtime**: `Docker`
-- **Instance Type**: Free (or paid for better performance)
+Render will automatically locate the multi-stage `./Dockerfile` in your repository.
 
-### Build & Deploy Settings
-- **Dockerfile Path**: `./Dockerfile`
-- Render will automatically detect and use the Dockerfile
+---
 
-## Step 3: Configure Environment Variables
+## 🔑 Step 2: Configure Environment Variables
 
-In the Render dashboard, add the following environment variables:
+Navigate to the **Environment** tab in your Render Web Service settings and configure:
 
 ### Required Variables
-```
-GEMINI_API_KEY=your_gemini_api_key_here
-```
-Get your key from: https://makersuite.google.com/app/apikey
+
+| Key | Example Value | Description |
+| :--- | :--- | :--- |
+| `GEMINI_API_KEY` | `AIzaSy...` | Required. Access token for Gemini 2.5 Flash. |
 
 ### Recommended Variables
-```
-GITHUB_TOKEN=your_github_token_here
-```
-Get your token from: https://github.com/settings/tokens
-- Required scopes: `repo` (read access)
 
-### Video Analysis Variables (Optional)
-```
-TRANSCRIPT_CACHE_DIR=/tmp/transcript_cache
-TRANSCRIPT_CACHE_EXPIRY=86400
-```
+| Key | Example Value | Description |
+| :--- | :--- | :--- |
+| `GITHUB_TOKEN` | `ghp_...` | Recommended. Avoids the 60 requests/hr unauthenticated GitHub rate limit. |
+| `VIDEO_MODE` | `balanced` | Set to `balanced` or `safe` on Render Free tier (512MB RAM) to prevent memory spikes from full video downloads. Set to `full` on paid tiers. |
+| `TRANSCRIPT_CACHE_DIR` | `/tmp/transcript_cache` | Temporary storage for transcript caching. |
+| `TRANSCRIPT_CACHE_EXPIRY` | `86400` | 24-hour cache duration (in seconds). |
 
-**Important Note**: The application uses `youtube-transcript-api` which should be version 0.6.2 or higher (specified in requirements.txt). If you need to use proxy settings with YouTube, ensure you're using the modern API version for thread safety. The legacy API (< 0.5.0) has thread-safety limitations when using proxies in multi-worker environments.
+---
 
-### Port Configuration
-```
-PORT=8000
-```
-Note: Render automatically sets this, but you can override if needed.
+## 🎬 Step 3: Overcoming YouTube Datacenter IP Blocks on Render
 
-## Step 4: Deploy
+Cloud hosting providers (including Render, AWS, and GCP) use shared datacenter IP pools. YouTube actively blocks server-side requests from these IPs with *"Sign in to confirm you're not a bot"*.
 
-1. Click **Create Web Service**
-2. Render will:
-   - Build the Docker image (frontend + backend)
-   - Deploy the application
-   - Assign a URL (e.g., `https://ai-hackathon-judge.onrender.com`)
+The AI Hackathon Judge resolves this on Render through four independent layers:
 
-## Step 5: Verify Deployment
+### Layer 1: Automatic Browser-Side Caption Fetching (No Setup Required!)
+When a user submits a YouTube URL on the frontend, the browser client runs `youtube-transcript` locally on the user's home network, extracts the caption text, and bundles it into the submission `FormData`. Because the request originates from the user's residential IP, **Render's datacenter IP is never exposed to YouTube**.
 
-1. Wait for the deployment to complete (5-10 minutes for first build)
-2. Visit your assigned URL
-3. Test the application:
-   - Submit a GitHub repository
-   - Add a YouTube video URL
-   - Verify video analysis works
+### Layer 2: Render Secret File (`cookies.txt`)
+If you want server-side fallback fetching to work reliably:
+1. Use a browser extension (such as *Get cookies.txt LOCALLY*) while logged into YouTube.
+2. Export your cookies to a file named `cookies.txt`.
+3. In your Render Dashboard, click **Environment** → **Secret Files** → **Add Secret File**.
+   - **Filename**: `cookies.txt`
+   - **Contents**: Paste the content of your `cookies.txt` file.
+   - Render mounts secret files at `/etc/secrets/cookies.txt`. The backend automatically detects this path!
 
-## Performance Optimization
+### Layer 3: Manual Transcript Textarea
+Users can always paste speaker notes or transcript text directly into the "Manual Transcript" field on the submission form.
 
-### Free Tier Considerations
-- **Cold Starts**: Free tier services spin down after 15 minutes of inactivity
-  - First request after idle may take 30-60 seconds
-  - Video caching helps subsequent requests
-  
-- **Build Time**: First build takes ~5-10 minutes
-  - Subsequent builds are faster with Docker layer caching
+---
 
-- **Memory**: Free tier has 512MB RAM
-  - Sufficient for most use cases
-  - Video transcript caching uses minimal memory
+## 🚀 Step 4: Deploy and Verify
 
-### Upgrade Options
-For production use, consider upgrading to:
-- **Starter Plan** ($7/month): No cold starts, 512MB RAM
-- **Standard Plan** ($25/month): 2GB RAM, better performance
+1. Click **Create Web Service** (or **Manual Deploy** → **Deploy latest commit**).
+2. Render will execute the multi-stage Docker build:
+   - Build frontend assets with Node 20.
+   - Install Python dependencies (including FastAPI, BeautifulSoup4, PyGithub, google-genai).
+   - Expose port `8000` (Render binds to `$PORT` automatically).
+3. Once the service transitions to `Live`:
+   - Open your assigned URL (`https://your-service.onrender.com`).
+   - Submit a test public repository or website URL.
+   - Verify that scorecards, Markdown feedback, and judge personas render correctly.
 
-## Troubleshooting
+---
 
-### Build Failures
+## 💡 Performance Optimization & Free Tier Considerations
 
-**Issue**: Docker build fails
-```
-Solution: Check Dockerfile syntax and ensure all dependencies are listed in requirements.txt
-```
+- **Cold Starts**: Render's free tier spins down instances after 15 minutes of inactivity. The first wake-up request may take 30–50 seconds.
+- **Memory Management**: Render's free tier provides 512 MB of RAM. Using `VIDEO_MODE=balanced` or relying on browser-side caption extraction avoids downloading large 480p video files into container memory.
+- **Disk Storage**: `/tmp/transcript_cache` uses ephemeral disk storage that resets when the container restarts. Transcripts cached during the active lifecycle provide sub-second retrieval for repeat evaluations.
 
-**Issue**: Frontend build fails
-```
-Solution: Verify Node.js version compatibility (requires Node 20+)
-```
+---
 
-### Runtime Errors
+## 🛠️ Common Troubleshooting
 
-**Issue**: "GEMINI_API_KEY not found"
-```
-Solution: Verify environment variable is set in Render dashboard
-```
-
-**Issue**: Video transcripts fail
-```
-Solution: 
-1. Check YouTube API is not blocked
-2. Verify video has captions enabled
-3. Check logs for rate limiting errors
-```
-
-**Issue**: High latency on video analysis
-```
-Solution:
-1. Enable transcript caching (should be enabled by default)
-2. Use shorter videos for demos
-3. Consider upgrading to paid tier
-```
-
-### Cache Issues
-
-**Issue**: Transcripts not caching
-```
-Solution:
-1. Verify TRANSCRIPT_CACHE_DIR=/tmp/transcript_cache is set
-2. Check logs for cache write errors
-3. Ensure /tmp directory has write permissions (it should by default)
-```
-
-## Monitoring
-
-### View Logs
-1. Go to Render dashboard
-2. Select your service
-3. Click **Logs** tab
-4. Monitor for errors or warnings
-
-### Key Metrics to Watch
-- Response time for video analysis
-- Cache hit rate (check logs)
-- Error rate for transcript fetching
-- YouTube API rate limit warnings
-
-## Scaling
-
-### Horizontal Scaling
-- Free tier: 1 instance only
-- Paid tiers: Configure auto-scaling based on traffic
-
-### Vertical Scaling
-- Upgrade instance type for more RAM/CPU
-- Useful for handling concurrent requests
-
-## Security Best Practices
-
-1. **Never commit API keys** to git
-2. Use Render's environment variables for secrets
-3. Rotate API keys periodically
-4. Monitor API usage on Google Cloud Console
-5. Set up rate limiting if needed
-
-## Custom Domain
-
-1. Go to service settings
-2. Click **Custom Domain**
-3. Add your domain
-4. Configure DNS records as instructed
-
-## Cost Estimation
-
-### Free Tier
-- Cost: $0/month
-- Limitations: Cold starts, 750 hours/month
-- Good for: Testing, personal projects
-
-### Paid Tier (Starter)
-- Cost: $7/month
-- Benefits: No cold starts, 24/7 uptime
-- Good for: Production use, demos
-
-## Support
-
-- **Render Docs**: https://render.com/docs
-- **Project Issues**: https://github.com/Daku3011/AI-Hackathon-Judge/issues
-- **Video Analysis Docs**: See `docs/VIDEO_ANALYSIS_IMPROVEMENTS.md`
-
-## Next Steps
-
-After successful deployment:
-1. Test all features thoroughly
-2. Monitor logs for any issues
-3. Share your deployment URL
-4. Consider setting up a custom domain
-5. Enable monitoring/alerting for production use
+| Issue | Root Cause | Solution |
+| :--- | :--- | :--- |
+| `GEMINI_API_KEY missing` | Environment variable not set. | Add `GEMINI_API_KEY` under the Environment tab and trigger a redeploy. |
+| `GitHub Error 403: Rate limit exceeded` | Unauthenticated GitHub API requests hit 60 req/hr limit. | Provide a personal `GITHUB_TOKEN` in environment variables. |
+| `Transcript unavailable (All methods failed)` | Video has no captions or YouTube IP block occurred on server. | Ensure browser-side transcript extraction succeeded, paste text manually, or configure a `cookies.txt` secret file. |
+| Container crashes with `OOMKilled` (Out of Memory) | `yt-dlp` downloaded a large video in `full` mode on a 512MB container. | Set `VIDEO_MODE=balanced` in Render environment variables. |
